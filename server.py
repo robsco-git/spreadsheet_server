@@ -1,3 +1,5 @@
+# a change for git
+
 import logging
 import pyoo
 from com.sun.star.connection import NoConnectException
