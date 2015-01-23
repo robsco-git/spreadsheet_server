@@ -42,7 +42,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 send("OK")
                 # lock the workbook
                 this_con.lock_workbook()
-                raise Exception("Manual Error")
+                # raise Exception("Manual Error")
                 # Run main loop for all communication
                 while True:
                     data = receive()
@@ -171,7 +171,6 @@ if __name__ == "__main__":
             print("Loading " + doc)
             server.workbooks[doc] = soffice.open_spreadsheet(WORKBOOKS_PATH + "/" + doc)
             server.locks[doc] = threading.Lock()
-
 
     # Start a thread with the server -- that thread will then start one
     # more thread for each request
