@@ -1,0 +1,7 @@
+venv
+.#*
+*~
+__pycache__
+.~lock*
+workbooks/old
+log/*
