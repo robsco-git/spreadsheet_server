@@ -8,7 +8,7 @@ from socket import SHUT_RDWR
 from os import listdir
 from os.path import isfile, join
 from time import sleep
-import con
+from spreadsheet_connection import SpreadsheetConnection
 import json
 import traceback
 
@@ -38,7 +38,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             # Handle first request to server and check that it adheres to the protocol
             data = receive()
             if (data[0] == "WORKBOOK"): # correct protocol
-                this_con = con.ConnectionHandler(server.workbooks[data[1]], server.locks[data[1]])
+                this_con = SpreadsheetConnection(server.workbooks[data[1]], server.locks[data[1]])
                 send("OK")
                 # lock the workbook
                 this_con.lock_workbook()

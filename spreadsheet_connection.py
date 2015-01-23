@@ -1,7 +1,7 @@
 import logging
 from com.sun.star.uno import RuntimeException
 
-class ConnectionHandler:
+class SpreadsheetConnection:
     """Handles connections to the workbooks opened by soffice."""
     def __init__(self, workbook, lock):
         self.workbook = workbook
