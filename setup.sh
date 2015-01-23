@@ -12,8 +12,5 @@ virtualenv --system-site-packages -p python3 venv
 
 # install pyoo
 . venv/bin/activate
-pip install pyoo
+pip3 install pyoo
 deactivate
-
-# make directories
-mkdir log workbooks

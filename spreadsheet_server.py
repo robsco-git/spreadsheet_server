@@ -13,7 +13,7 @@ import json
 import traceback
 
 SOFFICE_PIPE = "soffice_headless"
-WORKBOOKS_PATH = "/home/ubuntu/projects/pyoo_server/workbooks"
+WORKBOOKS_PATH = "./workbooks"
 MONITOR_THREAD_FREQ = 60 # In seconds
 
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
