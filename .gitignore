@@ -3,6 +3,6 @@ venv
 *~
 __pycache__
 .~lock*
-workbooks/old
-log/*
+workbooks/*
+log/*.log
 *.pyc

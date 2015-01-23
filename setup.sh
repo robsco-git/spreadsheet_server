@@ -1,4 +1,19 @@
 #!/bin/bash
 
-sudo apt-get install python3-uno
+set -e
 
+# install required packages
+sudo apt-get update
+sudo apt-get install python3-uno libreoffice-calc
+pip install virtualenv
+
+# set up the python3 virtualenv
+virtualenv --system-site-packages -p python3 venv
+
+# install pyoo
+. venv/bin/activate
+pip install pyoo
+deactivate
+
+# make directories
+mkdir log workbooks
