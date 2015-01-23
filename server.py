@@ -1,5 +1,3 @@
-# a change for git
-
 import logging
 import pyoo
 from com.sun.star.connection import NoConnectException
@@ -51,9 +49,6 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     if data == False:
                         # connection lost
                         break
-                    # elif data[0] == "LOCK":
-                    #     this_con.lock_workbook()
-                    #     send("OK")
                     elif data[0] == "SET":
                         if this_con.set_cells(data[1], data[2], data[3]):
                             send("OK")
@@ -65,11 +60,6 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                             send(cells)
                         else:
                             send("ERROR")
-                    # elif data[0] == "UNLOCK":
-                    #     if this_con.unlock_workbook():
-                    #         send("OK")
-                    #     else:
-                    #         send("ERROR")
                     elif data[0] == "SAVE":
                         this_con.save_workbook()
                         send("OK")
