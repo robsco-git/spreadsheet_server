@@ -5,3 +5,4 @@ __pycache__
 .~lock*
 workbooks/old
 log/*
+*.pyc
