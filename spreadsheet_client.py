@@ -42,7 +42,7 @@ class SpreadsheetClient:
         try:
             # endoce msg into json then send over the socket
             self.sock.sendall(json.dumps(msg, encoding='utf-8'))
-            print(msg)
+            # print(msg)
         except:
             raise Exception("Could not send message to server")
             traceback.print_exc()
@@ -56,7 +56,7 @@ class SpreadsheetClient:
             raise Exception("Connection to server closed!")
         
         received = json.loads(recv, encoding="utf-8")
-        print("Received: " + str(received))
+        # print("Received: " + str(received))
         return received
             
     def disconnect(self):

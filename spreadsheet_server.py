@@ -23,7 +23,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             # Send utf-8 encoded bytes of the json encoded strings
             # msg encoded with json -> bytes encoded in utf-8
             self.request.sendall(bytes(json.dumps(msg), "utf-8"))
-            print("Sent: " + json.dumps(msg))
+            # print("Sent: " + json.dumps(msg))
         def receive():
             # convert the received utf-8 bytes into a string -> load the object via json
             recv = self.request.recv(4096)
@@ -31,7 +31,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 # connection is closed
                 return False
             received = json.loads(str(recv, encoding="utf-8"))
-            print("Received: " + str(received))
+            # print("Received: " + str(received))
             return received
                 
         try:
