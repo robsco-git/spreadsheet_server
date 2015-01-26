@@ -10,7 +10,7 @@ if __name__ == "__main__":
         print("Could not connect to server")
     else:
         try:
-            for x in range(0, 100):
+            for x in range(0, 10):
                 options = client.get_cells('Input', "B4:B94")
                 rand_opt = random.choice(options)
                 print(rand_opt)
