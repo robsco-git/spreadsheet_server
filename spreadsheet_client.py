@@ -34,8 +34,8 @@ class SpreadsheetClient:
         self._send(["GET", sheet, cell_range])
         return self._receive()
         
-    def save_workbook(self):
-        self._send(["SAVE"])
+    def save_workbook(self, filename):
+        self._send(["SAVE", filename])
         return self._receive()
         
     def _send(self, msg):

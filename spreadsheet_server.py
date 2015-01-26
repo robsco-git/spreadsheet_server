@@ -61,7 +61,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                         else:
                             send("ERROR")
                     elif data[0] == "SAVE":
-                        this_con.save_workbook()
+                        this_con.save_workbook(data[1])
                         send("OK")
         except:
             traceback.print_exc()
