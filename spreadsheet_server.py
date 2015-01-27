@@ -18,12 +18,11 @@ MONITOR_THREAD_FREQ = 60 # In seconds
 
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
     def handle(self):
-        print("New connection")
         def send(msg):
             # Send utf-8 encoded bytes of the json encoded strings
             # msg encoded with json -> bytes encoded in utf-8
             self.request.sendall(bytes(json.dumps(msg), "utf-8"))
-            # print("Sent: " + json.dumps(msg))
+            logging.debug("Sent: " + json.dumps(msg))
         def receive():
             # convert the received utf-8 bytes into a string -> load the object via json
             recv = self.request.recv(4096)
@@ -31,7 +30,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 # connection is closed
                 return False
             received = json.loads(str(recv, encoding="utf-8"))
-            # print("Received: " + str(received))
+            logging.debug("Received: " + str(received))
             return received
                 
         try:
@@ -64,8 +63,8 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                         this_con.save_workbook(data[1])
                         send("OK")
         except:
-            traceback.print_exc()
-            print("Connection to client lost")
+            logging.debug(traceback.print_exc())
+            logging.debug("Connection to client lost")
         finally:
             # make sure to unlock the workbook
             try:
@@ -101,7 +100,7 @@ class MonitorThread(threading.Thread):
                     removed_workbooks.append(key)
 
             for doc in removed_workbooks:
-                print("Removing " + doc)
+                logging.info("Removing " + doc)
                 server.locks[doc].acquire()
                 server.workbooks[doc].close()
                 server.workbooks.pop(doc, None)
@@ -117,7 +116,7 @@ class MonitorThread(threading.Thread):
                             found = True
                             break
                     if found == False:
-                        print("Loading " + doc)
+                        logging.info("Loading " + doc)
                         server.workbooks[doc] = soffice.open_spreadsheet(WORKBOOKS_PATH + "/" + doc)
                         server.locks[doc] = threading.Lock()
             sleep(MONITOR_THREAD_FREQ)
@@ -139,7 +138,6 @@ if __name__ == "__main__":
     logging.info('Starting soffice process')
     # Start the headless soffice process on the server
     command = '/usr/bin/soffice --accept="pipe,name=' + SOFFICE_PIPE + ';urp;" --norestore --nologo --nodefault --headless'
-    #command = shlex.split(command)
     logfile = open("./log/soffice.log", "w")
     subprocess.Popen(command, shell=True, stdout=logfile, stderr=logfile)
 
@@ -150,7 +148,7 @@ if __name__ == "__main__":
             if attempts > 300: # soffice process isin't coming up
                 exit()
             soffice = pyoo.Desktop(pipe=SOFFICE_PIPE)
-            print("Connected to soffice.")
+            logging.info("Connected to soffice.")
             break
         except NoConnectException:
             logging.debug('Could not connect to soffice process. Attempt no: ' + str(attempts+1))
@@ -168,7 +166,7 @@ if __name__ == "__main__":
     server.locks = {} # a lock for each workbook
     for doc in docs:
         if doc[0] != '.' :
-            print("Loading " + doc)
+            logging.info("Loading " + doc)
             server.workbooks[doc] = soffice.open_spreadsheet(WORKBOOKS_PATH + "/" + doc)
             server.locks[doc] = threading.Lock()
 
@@ -186,6 +184,4 @@ if __name__ == "__main__":
     monitor_thread.daemon = True
     monitor_thread.start()
     
-    print("Server loop running in thread:", server_thread.name)
-
-    #server.shutdown()
+    logging.info("Server thread running. Waiting on connections...")

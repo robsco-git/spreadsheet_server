@@ -37,17 +37,40 @@ class SpreadsheetConnection:
     def set_cells(self, sheet, cell_range, data):
         if self.lock.locked():
             r = self._range_to_index(cell_range)
+
+            # check if each cell is a number of not - try catch float()
+            
             sheet = self.workbook.sheets[sheet]
             try:
                 if len(cell_range.split(':')) == 1:
                     # a single cell
+                    try:
+                        data = float(data)
+                    except ValueError:
+                        pass
                     sheet[r[0],r[1]].value = data
                 else:
                     if r[0][0] == r[0][1]: # A row of cells is being set
+                        for x, cell in enumerate(data):
+                            try:
+                                data[x] = float(cell)
+                            except ValueError:
+                                pass
                         sheet[r[0][0],r[1][0]:r[1][1]+1].values = data
                     elif r[1][0] == r[1][1]: # A column of cells is being set
+                        for x, cell in enumerate(data):
+                            try:
+                                data[x] = float(cell)
+                            except ValueError:
+                                pass
                         sheet[r[0][0]:r[0][1]+1,r[1][0]].values = data
                     else: # A grid of cells is being set
+                        for x, lst in enumerate(data):
+                            for y, cell in enumerate(data):
+                                try:
+                                    data[x][y] = float(cell)
+                                except ValueError:
+                                    pass
                         sheet[r[0][0]:r[0][1]+1,r[1][0]:r[1][1]+1].values = data
                 return True
             except RuntimeException:
@@ -83,6 +106,6 @@ class SpreadsheetConnection:
         
     def save_workbook(self, filename):
         if self.lock.locked():
-            self.workbook.save(filename)
+            self.workbook.save("./saved_workbooks/" + filename)
         else:
             return "Workbook not locked"
