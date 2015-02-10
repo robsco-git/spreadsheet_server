@@ -1,4 +1,5 @@
 import logging
+from math import pow
 from com.sun.star.uno import RuntimeException
 
 class SpreadsheetConnection:
@@ -17,13 +18,23 @@ class SpreadsheetConnection:
         def split_char_num(cell_ref):
             num = ""
             str_val = 0
-            for char in cell_ref:
+            split = False
+            for x, char in enumerate(cell_ref):
                 if char.isdigit():
+                    if not split:
+                        split = True
+                        # calculate index from string part of refernece
+                        string_part = cell_ref[:x]
+                        for i, c in enumerate(string_part):
+                            if i == len(string_part) - 1:
+                                # least significant character
+                                str_val += ord(c.upper()) - 65
+                            else:
+                                str_val += (ord(c.upper()) - 65 + 1) * pow(26, len(string_part)-i-1)
+                    # handle numeric part of the cell reference            
                     num += char
-                else:
-                    str_val += ord(char.upper()) - 65
             return str_val, num
-        
+
         if len(cell_range.split(':')) == 1:
             # working with a single cell reference
             str_val, num = split_char_num(cell_range)

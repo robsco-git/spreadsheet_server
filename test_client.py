@@ -2,7 +2,7 @@ import random
 from spreadsheet_client import SpreadsheetClient
 
 if __name__ == "__main__":
-    testing_doc = "20141209 HQA testsheet 1 (GS) BM.xlsx"
+    testing_doc = "make_tool_test.xlsx"
     #testing_doc = "range_test.xlsx"
     try:
         client = SpreadsheetClient("localhost", 5555, testing_doc)
