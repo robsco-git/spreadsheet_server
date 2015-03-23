@@ -1,0 +1,8 @@
+command-not-found==0.3
+language-selector==0.1
+pycurl==7.19.3
+pygobject==3.12.0
+pyoo==1.0
+python-apt==0.9.3.5ubuntu1
+ufw==0.34-rc-0ubuntu2
+unattended-upgrades==0.1

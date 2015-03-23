@@ -1,6 +1,7 @@
 import logging
 from math import pow
 from com.sun.star.uno import RuntimeException
+import traceback
 
 class SpreadsheetConnection:
     """Handles connections to the workbooks opened by soffice."""
@@ -46,6 +47,7 @@ class SpreadsheetConnection:
             return [[int(left_num)-1, int(right_num)-1],[left_str_val, right_str_val]]
 
     def set_cells(self, sheet, cell_range, data):
+        """ [vertical, horizontal].values """
         if self.lock.locked():
             r = self._range_to_index(cell_range)
 
@@ -77,7 +79,7 @@ class SpreadsheetConnection:
                         sheet[r[0][0]:r[0][1]+1,r[1][0]].values = data
                     else: # A grid of cells is being set
                         for x, lst in enumerate(data):
-                            for y, cell in enumerate(data):
+                            for y, cell in enumerate(lst):
                                 try:
                                     data[x][y] = float(cell)
                                 except ValueError:
@@ -85,12 +87,14 @@ class SpreadsheetConnection:
                         sheet[r[0][0]:r[0][1]+1,r[1][0]:r[1][1]+1].values = data
                 return True
             except RuntimeException:
+                logging.debug(traceback.print_exc())
                 return False
         else:
             return False
         
     def get_cells(self, sheet, cell_range):
-        # Workbook does not need to be locked cells to be read
+        """ [vertical, horizontal].values
+        Workbook does not need to be locked cells to be read """
         try:
             r = self._range_to_index(cell_range)
             sheet = self.workbook.sheets[sheet]
