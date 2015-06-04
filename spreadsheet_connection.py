@@ -15,7 +15,11 @@ class SpreadsheetConnection:
         self.lock.acquire()
 
     def _range_to_index(self, cell_range):
-        """ Used to convert a cell (or range) reference to indexes """
+        """ Used to convert a cell (or range) reference to 0 based indexe(s) 
+        For a range of cells it returns: 
+        [[row_range_start, row_range_end],[columnn_range_start, column_range_end]]
+        And for a single cell it returns:
+        [row, column]"""
         def split_char_num(cell_ref):
             num = ""
             str_val = 0
