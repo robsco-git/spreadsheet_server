@@ -1,5 +1,3 @@
-calc_server
-
 This tool was built to aid rapid web tool development where the logic was
 already implemented in Microsoft Excel/LibreOffice Calc. Instead of rewriting
 the logic from scratch, this tool was born.
@@ -9,7 +7,9 @@ It has been developed to work on a headless GNU/Linux system.
 --------
 Features
 --------
-* 'Instant' access to cells in the spreadsheets as they are waiting in memory.
+* 'Instant' access to cells in the spreadsheets because they open in LibreOffice
+Calc.
+* All the function calculation support and power of LibreOffice Calc.
 * Server requests are threaded so concurrent connections are supported.
 * Each spreadsheet can be independently locked and unlocked to deal with state
 changes in the spreadsheet.
@@ -24,13 +24,13 @@ changes.
 New spreadsheets are opened with LibreOffice and deleted spreadsheets are closed
 in LibreOffice.
 The 'client_python2.py' connects to the server and can update cells and retrieve
-their content.
+their calculated content.
 
 ------------
 Requirements
 ------------
 Server:
-	LibreOffice
+	LibreOffice Calc
 	python3
 	virtualenv created with '--system-site-packages' argument
 		   (For example: "virtualenv --system-site-packages -p python3 venv")
