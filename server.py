@@ -8,7 +8,7 @@ from socket import SHUT_RDWR
 from os import listdir
 from os.path import isfile, join
 from time import sleep
-from spreadsheet_connection import SpreadsheetConnection
+from connection import SpreadsheetConnection
 import json
 import traceback
 
