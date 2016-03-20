@@ -3,25 +3,25 @@ import json
 import traceback
 
 class SpreadsheetClient:
-    def __init__(self, ip, port, workbook):
+    def __init__(self, ip, port, spreadsheet):
         try:
             self.sock = self.connect(ip, port)
         except socket.error:
             raise Exception("Could not connect to server!")
         else:
-            self.set_workbook(workbook)
+            self.set_spreadsheet(spreadsheet)
         
     def connect(self, ip, port):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((ip, port))
         return sock
                 
-    def set_workbook(self, workbook):
-        self._send(["WORKBOOK", workbook])
+    def set_spreadsheet(self, spreadsheet):
+        self._send(["SPREADSHEET", spreadsheet])
         if self._receive() == "OK":
             return True
         else:
-            raise Exception("Workbook could not be set!")
+            raise Exception("Spreadsheet could not be set!")
 
     def set_cells(self, sheet, cell_range, data):
         self._send(["SET", sheet, cell_range, data])
@@ -34,7 +34,7 @@ class SpreadsheetClient:
         self._send(["GET", sheet, cell_range])
         return self._receive()
         
-    def save_workbook(self, filename):
+    def save_spreadsheet(self, filename):
         self._send(["SAVE", filename])
         return self._receive()
         

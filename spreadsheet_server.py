@@ -13,7 +13,7 @@ import json
 import traceback
 
 SOFFICE_PIPE = "soffice_headless"
-WORKBOOKS_PATH = "./workbooks"
+SPREADSHEETS_PATH = "./spreadsheets"
 MONITOR_THREAD_FREQ = 60 # In seconds
 
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
@@ -36,11 +36,11 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         try:
             # Handle first request to server and check that it adheres to the protocol
             data = receive()
-            if (data[0] == "WORKBOOK"): # correct protocol
-                this_con = SpreadsheetConnection(server.workbooks[data[1]], server.locks[data[1]])
+            if (data[0] == "SPREADSHEET"): # correct protocol
+                this_con = SpreadsheetConnection(server.spreadsheets[data[1]], server.locks[data[1]])
                 send("OK")
-                # lock the workbook
-                this_con.lock_workbook()
+                # lock the spreadsheet
+                this_con.lock_spreadsheet()
                 # raise Exception("Manual Error")
                 # Run main loop for all communication
                 while True:
@@ -60,16 +60,16 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                         else:
                             send("ERROR")
                     elif data[0] == "SAVE":
-                        this_con.save_workbook(data[1])
+                        this_con.save_spreadsheet(data[1])
                         send("OK")
         except:
             logging.debug(traceback.print_exc())
             logging.debug("Connection to client lost")
         finally:
-            # make sure to unlock the workbook
+            # make sure to unlock the spreadsheet
             try:
                 if this_con.lock.locked:
-                    this_con.unlock_workbook()
+                    this_con.unlock_spreadsheet()
             except UnboundLocalError:
                 # this_con was never created
                 pass
@@ -84,40 +84,40 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             self.request.close()
         
 class MonitorThread(threading.Thread):
-    """ Monitors the workbook directory for changes """
+    """ Monitors the spreadsheet directory for changes """
     def run(self):
         while True:
-            docs = [ f for f in listdir(WORKBOOKS_PATH) if isfile(join(WORKBOOKS_PATH,f)) ]
-            # check for removed workbooks
-            removed_workbooks = []
-            for key, value in server.workbooks.items():
+            docs = [ f for f in listdir(SPREADSHEETS_PATH) if isfile(join(SPREADSHEETS_PATH,f)) ]
+            # check for removed spreadsheets
+            removed_spreadsheets = []
+            for key, value in server.spreadsheets.items():
                 removed = True
                 for doc in docs:
                     if key == doc:
                         removed = False
                         break
                 if removed:
-                    removed_workbooks.append(key)
+                    removed_spreadsheets.append(key)
 
-            for doc in removed_workbooks:
+            for doc in removed_spreadsheets:
                 logging.info("Removing " + doc)
                 server.locks[doc].acquire()
-                server.workbooks[doc].close()
-                server.workbooks.pop(doc, None)
+                server.spreadsheets[doc].close()
+                server.spreadsheets.pop(doc, None)
                 server.locks.pop(doc, None)
 
-            # check for new workbooks
+            # check for new spreadsheets
             for doc in docs:
                 if doc[0] != '.':
                     found = False
                    
-                    for key, value in server.workbooks.items():
+                    for key, value in server.spreadsheets.items():
                         if doc == key:
                             found = True
                             break
                     if found == False:
                         logging.info("Loading " + doc)
-                        server.workbooks[doc] = soffice.open_spreadsheet(WORKBOOKS_PATH + "/" + doc)
+                        server.spreadsheets[doc] = soffice.open_spreadsheet(SPREADSHEETS_PATH + "/" + doc)
                         server.locks[doc] = threading.Lock()
             sleep(MONITOR_THREAD_FREQ)
         
@@ -160,14 +160,14 @@ if __name__ == "__main__":
 
     server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
     
-    # create documents for each file in ./workbooks
-    docs = [ f for f in listdir(WORKBOOKS_PATH) if isfile(join(WORKBOOKS_PATH,f)) ]
-    server.workbooks = {}
-    server.locks = {} # a lock for each workbook
+    # create documents for each file in ./spreadsheets
+    docs = [ f for f in listdir(SPREADSHEETS_PATH) if isfile(join(SPREADSHEETS_PATH,f)) ]
+    server.spreadsheets = {}
+    server.locks = {} # a lock for each spreadsheet
     for doc in docs:
         if doc[0] != '.' :
             logging.info("Loading " + doc)
-            server.workbooks[doc] = soffice.open_spreadsheet(WORKBOOKS_PATH + "/" + doc)
+            server.spreadsheets[doc] = soffice.open_spreadsheet(SPREADSHEETS_PATH + "/" + doc)
             server.locks[doc] = threading.Lock()
 
     # Start a thread with the server -- that thread will then start one
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     logging.info('Server starting')
     server_thread.start()
 
-    # Update workbooks thread
+    # Update spreadsheets thread
     monitor_thread = MonitorThread()
     monitor_thread.daemon = True
     monitor_thread.start()

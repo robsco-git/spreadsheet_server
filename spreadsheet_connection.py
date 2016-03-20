@@ -4,14 +4,14 @@ from com.sun.star.uno import RuntimeException
 import traceback
 
 class SpreadsheetConnection:
-    """Handles connections to the workbooks opened by soffice."""
-    def __init__(self, workbook, lock):
-        self.workbook = workbook
+    """Handles connections to the spreadsheets opened by soffice."""
+    def __init__(self, spreadsheet, lock):
+        self.spreadsheet = spreadsheet
         self.lock = lock
 
     # The lock/unlock functions must be used for the getting and setting functions to work
-    # In order for simultaneous requests to the same workbook to not interfere with each other
-    def lock_workbook(self):
+    # In order for simultaneous requests to the same spreadsheet to not interfere with each other
+    def lock_spreadsheet(self):
         self.lock.acquire()
 
     def _range_to_index(self, cell_range):
@@ -57,7 +57,7 @@ class SpreadsheetConnection:
 
             # check if each cell is a number of not - try catch float()
             
-            sheet = self.workbook.sheets[sheet]
+            sheet = self.spreadsheet.sheets[sheet]
             try:
                 if len(cell_range.split(':')) == 1:
                     # a single cell
@@ -98,10 +98,10 @@ class SpreadsheetConnection:
         
     def get_cells(self, sheet, cell_range):
         """ [vertical, horizontal].values
-        Workbook does not need to be locked cells to be read """
+        Spreadsheet does not need to be locked cells to be read """
         try:
             r = self._range_to_index(cell_range)
-            sheet = self.workbook.sheets[sheet]
+            sheet = self.spreadsheet.sheets[sheet]
             # [vertical area, horizontal area]
             if len(cell_range.split(':')) == 1:
                 # a single cell
@@ -116,15 +116,15 @@ class SpreadsheetConnection:
         except:
             return False
 
-    def unlock_workbook(self):
+    def unlock_spreadsheet(self):
         try:
             self.lock.release()
             return True
         except RuntimeError:
             return False
         
-    def save_workbook(self, filename):
+    def save_spreadsheet(self, filename):
         if self.lock.locked():
-            self.workbook.save("./saved_workbooks/" + filename)
+            self.spreadsheet.save("./saved_spreadsheets/" + filename)
         else:
-            return "Workbook not locked"
+            return "Spreadsheet not locked"
