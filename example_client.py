@@ -2,9 +2,9 @@ import random
 from client_python2 import SpreadsheetClient
 
 if __name__ == "__main__":
-    testing_doc = "test.ods"
+    example_spreadsheet = "example.ods"
     try:
-        client = SpreadsheetClient("localhost", 5555, testing_doc)
+        client = SpreadsheetClient("localhost", 5555, example_spreadsheet)
     except:
         print("Could not connect to server")
     else:
