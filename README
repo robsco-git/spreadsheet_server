@@ -1,0 +1,40 @@
+calc_server
+
+This tool was built to aid rapid web tool development where the logic was
+already implemented in Microsoft Excel/LibreOffice Calc. Instead of rewriting
+the logic from scratch, this tool was born.
+
+It has been developed to work on a headless GNU/Linux system.
+
+--------
+Features
+--------
+* 'Instant' access to cells in the spreadsheets as they are waiting in memory.
+* Server requests are threaded so concurrent connections are supported.
+* Each spreadsheet can be independently locked and unlocked to deal with state
+changes in the spreadsheet.
+* Spreadsheets can be saved - for debugging purposes.
+
+------------
+How it works
+------------
+A LibreOffice instance is launched by 'server.py' in a headless state.
+By default, the './spreadsheets' directory is polled every 60 seconds for file
+changes.
+New spreadsheets are opened with LibreOffice and deleted spreadsheets are closed
+in LibreOffice.
+The 'client_python2.py' connects to the server and can update cells and retrieve
+their content.
+
+------------
+Requirements
+------------
+Server:
+	LibreOffice
+	python3
+	virtualenv created with '--system-site-packages' argument
+		   (For example: "virtualenv --system-site-packages -p python3 venv")
+	pyoo installed to the virtualenv - "pip install pyoo"
+
+Client:
+	python2
