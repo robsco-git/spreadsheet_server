@@ -3,7 +3,7 @@ venv
 *~
 __pycache__
 .~lock*
-workbooks/*
+spreadsheets/*
 log/*.log
 *.pyc
-saved_workbooks/*
+saved_spreadsheets/*

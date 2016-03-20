@@ -1,23 +1,19 @@
 import random
-from spreadsheet_client import SpreadsheetClient
+from client_python2 import SpreadsheetClient
 
 if __name__ == "__main__":
-    testing_doc = "make_tool_test.xlsx"
-    #testing_doc = "range_test.xlsx"
+    testing_doc = "test.ods"
     try:
         client = SpreadsheetClient("localhost", 5555, testing_doc)
     except:
         print("Could not connect to server")
     else:
         try:
-            for x in range(0, 10):
-                options = client.get_cells('Input', "B4:B94")
-                rand_opt = random.choice(options)
-                print(rand_opt)
-                client.set_cells("Input", "B2", rand_opt)
-                cells = client.get_cells("Calcsheet", "K7:K21")
-                for cell in cells:
-                    print cell
+            cell_range = "A1:C3"
+            print "Cells " + cell_range
+            all_values = client.get_cells('Sheet1', cell_range)
+            print all_values
+
         except:
             print("Error in connection")
         finally:
