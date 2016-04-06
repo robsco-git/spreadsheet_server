@@ -49,12 +49,14 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                         # connection lost
                         break
                     elif data[0] == "SET":
-                        if this_con.set_cells(data[1], data[2], data[3]):
-                            send("OK")
-                        else:
-                            send("ERROR")
+                        # try:
+                        this_con.set_cells(data[1], data[2], data[3])
+                        send("OK")
+                        # except ValueError:
+                        #     send("ERROR")
                     elif data[0] == "GET":
                         cells = this_con.get_cells(data[1], data[2])
+
                         if cells != False:
                             send(cells)
                         else:
