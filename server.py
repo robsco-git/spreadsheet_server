@@ -84,19 +84,19 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
 
     def __close_connection(self):
-        # Unlock the spreadsheet
+        """Unlock the spreadsheet and close the connection to the client."""
+        
         try:
             if self.con.lock.locked:
                 self.con.unlock_spreadsheet()
         except UnboundLocalError:
-            # con was never created
+            # con was never created.
             pass
             
-        # Close the connection to the client
         try:
             self.request.shutdown(SHUT_RDWR)
         except OSError:
-            # client already disconnected
+            # The client has already disconnected.
             pass
 
         self.request.close()
@@ -107,7 +107,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             data = self.__receive()
             
             if data == False:
-                # The connection was lost
+                # The connection has been lost.
                 break
             
             elif data[0] == "SET":
@@ -128,8 +128,8 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
     
     def handle(self):
-        """Not sure of the description here yet...
-        
+        """Make a connection to the client, run the main protocol loop and
+        close the connection.
         """
 
         self.__make_connection()
@@ -138,45 +138,73 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
         
 class MonitorThread(threading.Thread):
-    """ Monitors the spreadsheet directory for changes """
+    """Monitors the spreadsheet directory for changes."""
+    
+    def __load_spreadsheet(self, doc):
+        logging.info("Loading " + doc)
+        server.spreadsheets[doc] = soffice.open_spreadsheet(
+            SPREADSHEETS_PATH + "/" + doc)
+        server.locks[doc] = threading.Lock()
+
+        
+    def __unload_spreadsheet(self, doc):
+        logging.info("Removing " + doc)
+        server.locks[doc].acquire()
+        server.spreadsheets[doc].close()
+        server.spreadsheets.pop(doc, None)
+        server.locks.pop(doc, None)
+
+        
+    def __check_added(self):
+        """Check for new spreadsheets and loads them into LibreOffice."""
+                    
+        for doc in self.docs:
+            if doc[0] != '.': # Ignore hidden files
+                found = False
+
+                for key, value in server.spreadsheets.items():
+                    if doc == key:
+                        found = True
+                        break
+
+                if found == False:
+                    self.__load_spreadsheet(doc)
+
+                    
+    def __check_removed(self):
+        """Check for any deleted or removed spreadsheets and remove them from 
+        LibreOffice.
+        """
+            
+        removed_spreadsheets = []
+        for key, value in server.spreadsheets.items():
+            removed = True
+            for doc in self.docs:
+                if key == doc:
+                    removed = False
+                    break
+            if removed:
+                removed_spreadsheets.append(key)
+
+        for doc in removed_spreadsheets:
+            self.__unload_spreadsheet(doc)
+
+    
     def run(self):
         while True:
-            docs = [ f for f in listdir(SPREADSHEETS_PATH) if isfile(join(SPREADSHEETS_PATH,f)) ]
-            # check for removed spreadsheets
-            removed_spreadsheets = []
-            for key, value in server.spreadsheets.items():
-                removed = True
-                for doc in docs:
-                    if key == doc:
-                        removed = False
-                        break
-                if removed:
-                    removed_spreadsheets.append(key)
+            spreadsheets = listdir(SPREADSHEETS_PATH)
+            self.docs = [f for f in spreadsheets if
+                    isfile(join(SPREADSHEETS_PATH, f))]
 
-            for doc in removed_spreadsheets:
-                logging.info("Removing " + doc)
-                server.locks[doc].acquire()
-                server.spreadsheets[doc].close()
-                server.spreadsheets.pop(doc, None)
-                server.locks.pop(doc, None)
-
-            # check for new spreadsheets
-            for doc in docs:
-                if doc[0] != '.':
-                    found = False
-                   
-                    for key, value in server.spreadsheets.items():
-                        if doc == key:
-                            found = True
-                            break
-                    if found == False:
-                        logging.info("Loading " + doc)
-                        server.spreadsheets[doc] = soffice.open_spreadsheet(SPREADSHEETS_PATH + "/" + doc)
-                        server.locks[doc] = threading.Lock()
+            self.__check_removed()
+            self.__check_added()
+            
             sleep(MONITOR_THREAD_FREQ)
-        
+
+
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
+
 
 if __name__ == "__main__":
     # Set up logging
