@@ -17,73 +17,109 @@ SPREADSHEETS_PATH = "./spreadsheets"
 MONITOR_THREAD_FREQ = 60 # In seconds
 
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
-    def handle(self):
-        def send(msg):
-            # Send utf-8 encoded bytes of the json encoded strings
-            # msg encoded with json -> bytes encoded in utf-8
-            self.request.sendall(bytes(json.dumps(msg), "utf-8"))
-            logging.debug("Sent: " + json.dumps(msg))
-        def receive():
-            # convert the received utf-8 bytes into a string -> load the object via json
-            recv = self.request.recv(4096)
-            if recv == b'':
-                # connection is closed
-                return False
-            received = json.loads(str(recv, encoding="utf-8"))
-            logging.debug("Received: " + str(received))
-            return received
-                
-        try:
-            # Handle first request to server and check that it adheres to the protocol
-            data = receive()
-            if (data[0] == "SPREADSHEET"): # correct protocol
-                this_con = SpreadsheetConnection(server.spreadsheets[data[1]], server.locks[data[1]])
-                send("OK")
-                # lock the spreadsheet
-                this_con.lock_spreadsheet()
-                # raise Exception("Manual Error")
-                # Run main loop for all communication
-                while True:
-                    data = receive()
-                    if data == False:
-                        # connection lost
-                        break
-                    elif data[0] == "SET":
-                        # try:
-                        this_con.set_cells(data[1], data[2], data[3])
-                        send("OK")
-                        # except ValueError:
-                        #     send("ERROR")
-                    elif data[0] == "GET":
-                        cells = this_con.get_cells(data[1], data[2])
+    def send(self, msg):
+        """Convert a message to JSON and send it to the client.
 
-                        if cells != False:
-                            send(cells)
-                        else:
-                            send("ERROR")
-                    elif data[0] == "SAVE":
-                        this_con.save_spreadsheet(data[1])
-                        send("OK")
-        except:
-            logging.debug(traceback.print_exc())
-            logging.debug("Connection to client lost")
-        finally:
-            # make sure to unlock the spreadsheet
-            try:
-                if this_con.lock.locked:
-                    this_con.unlock_spreadsheet()
-            except UnboundLocalError:
-                # this_con was never created
-                pass
+        The messages are sent as utf-8 encoded bytes
+        """
+
+        json_msg = json.dumps(msg)
+        json_bytes = bytes(json_msg, "utf-8")
+
+        self.request.send(json_bytes)
+        
+        logging.debug("Sent: " + json.dumps(msg))
+
+
+    def receive(self):
+        """Receive a message from the client, decode it from JSON and return.
+        
+        The received messages are utf-8 encoded bytes. False is returned on 
+        failure to connect to the client, otherwise a string of the message is
+        returned.
+        """
+        
+        recv = self.request.recv(4096)
+        if recv == b'':
+            # The connection is closed.
+            return False
+
+        recv_json = str(recv, encoding="utf-8")
+        recv_string = json.loads(recv_json)
+        
+        logging.debug("Received: " + str(recv_string))
+        return recv_string
+
+
+    def make_connection(self):
+        """Handle first request to server and check that it adheres to the
+        protocol.
+        """
+        
+        data = self.receive()
+        if (data[0] != "SPREADSHEET"):
+            raise RuntimeError("Received incorrect connection string.")
+
+        self.con = SpreadsheetConnection(
+            server.spreadsheets[data[1]], server.locks[data[1]])
+        
+        self.send("OK")
+        self.con.lock_spreadsheet()
+
+
+    def close_connection(self):
+        # Unlock the spreadsheet
+        try:
+            if self.con.lock.locked:
+                self.con.unlock_spreadsheet()
+        except UnboundLocalError:
+            # con was never created
+            pass
+            
+        # Close the connection to the client
+        try:
+            self.request.shutdown(SHUT_RDWR)
+        except OSError:
+            # client already disconnected
+            pass
+
+        self.request.close()
+
+
+    def main_loop(self):
+        while True:
+            data = self.receive()
+            
+            if data == False:
+                # The connection was lost
+                break
+            
+            elif data[0] == "SET":
+                self.con.set_cells(data[1], data[2], data[3])
+                self.send("OK")
                 
-            # close the socket
-            try:
-                self.request.shutdown(SHUT_RDWR)
-            except OSError:
-                # client already disconnected
-                pass
-                
-            self.request.close()
+            elif data[0] == "GET":
+                cells = self.con.get_cells(data[1], data[2])
+
+                if cells != False:
+                    self.send(cells)
+                else:
+                    self.send("ERROR")
+                    
+            elif data[0] == "SAVE":
+                self.con.save_spreadsheet(data[1])
+                self.send("OK")
+
+    
+    def handle(self):
+        """Not sure of the description here yet...
+        
+        """
+
+        self.make_connection()
+        self.main_loop()
+        self.close_connection()
+
         
 class MonitorThread(threading.Thread):
     """ Monitors the spreadsheet directory for changes """
@@ -136,6 +172,8 @@ if __name__ == "__main__":
     logging.info('Killing any current soffice process')
     # Kill any currently running soffice process
     subprocess.call(['killall', 'soffice.bin'])
+
+    subprocess.call(['rm', '/tmp/OSL_PIPE_1001_soffice_headless'])
 
     logging.info('Starting soffice process')
     # Start the headless soffice process on the server
