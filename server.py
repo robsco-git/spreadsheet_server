@@ -17,7 +17,7 @@ SPREADSHEETS_PATH = "./spreadsheets"
 MONITOR_THREAD_FREQ = 60 # In seconds
 
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
-    def send(self, msg):
+    def __send(self, msg):
         """Convert a message to JSON and send it to the client.
 
         The messages are sent as utf-8 encoded bytes
@@ -31,7 +31,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         logging.debug("Sent: " + json.dumps(msg))
 
 
-    def receive(self):
+    def __receive(self):
         """Receive a message from the client, decode it from JSON and return.
         
         The received messages are utf-8 encoded bytes. False is returned on 
@@ -51,23 +51,23 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         return recv_string
 
 
-    def make_connection(self):
+    def __make_connection(self):
         """Handle first request to server and check that it adheres to the
         protocol.
         """
         
-        data = self.receive()
+        data = self.__receive()
         if (data[0] != "SPREADSHEET"):
             raise RuntimeError("Received incorrect connection string.")
 
         self.con = SpreadsheetConnection(
             server.spreadsheets[data[1]], server.locks[data[1]])
         
-        self.send("OK")
+        self.__send("OK")
         self.con.lock_spreadsheet()
 
 
-    def close_connection(self):
+    def __close_connection(self):
         # Unlock the spreadsheet
         try:
             if self.con.lock.locked:
@@ -86,9 +86,9 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         self.request.close()
 
 
-    def main_loop(self):
+    def __main_loop(self):
         while True:
-            data = self.receive()
+            data = self.__receive()
             
             if data == False:
                 # The connection was lost
@@ -96,19 +96,19 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             
             elif data[0] == "SET":
                 self.con.set_cells(data[1], data[2], data[3])
-                self.send("OK")
+                self.__send("OK")
                 
             elif data[0] == "GET":
                 cells = self.con.get_cells(data[1], data[2])
 
                 if cells != False:
-                    self.send(cells)
+                    self.__send(cells)
                 else:
-                    self.send("ERROR")
+                    self.__send("ERROR")
                     
             elif data[0] == "SAVE":
                 self.con.save_spreadsheet(data[1])
-                self.send("OK")
+                self.__send("OK")
 
     
     def handle(self):
@@ -116,9 +116,9 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         
         """
 
-        self.make_connection()
-        self.main_loop()
-        self.close_connection()
+        self.__make_connection()
+        self.__main_loop()
+        self.__close_connection()
 
         
 class MonitorThread(threading.Thread):

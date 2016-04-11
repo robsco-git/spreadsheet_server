@@ -17,28 +17,28 @@ class SpreadsheetClient:
         return sock
                 
     def set_spreadsheet(self, spreadsheet):
-        self._send(["SPREADSHEET", spreadsheet])
-        if self._receive() == "OK":
+        self.__send(["SPREADSHEET", spreadsheet])
+        if self.__receive() == "OK":
             return True
         else:
             raise Exception("Spreadsheet could not be set!")
 
     def set_cells(self, sheet, cell_range, data):
-        self._send(["SET", sheet, cell_range, data])
-        if self._receive() == "OK":
+        self.__send(["SET", sheet, cell_range, data])
+        if self.__receive() == "OK":
             return True
         else:
             raise Exception("Could not set cells!")
 
     def get_cells(self, sheet, cell_range):
-        self._send(["GET", sheet, cell_range])
-        return self._receive()
+        self.__send(["GET", sheet, cell_range])
+        return self.__receive()
         
     def save_spreadsheet(self, filename):
-        self._send(["SAVE", filename])
-        return self._receive()
+        self.__send(["SAVE", filename])
+        return self.__receive()
         
-    def _send(self, msg):
+    def __send(self, msg):
         try:
             # endoce msg into json then send over the socket
             self.sock.sendall(json.dumps(msg, encoding='utf-8'))
@@ -48,7 +48,7 @@ class SpreadsheetClient:
             traceback.print_exc()
             print("Connection error")
 
-    def _receive(self):
+    def __receive(self):
         # convert the received utf-8 bytes into a string -> load the object via json
         recv = self.sock.recv(4096)
         if recv == b'':

@@ -33,7 +33,7 @@ class SpreadsheetConnection:
             return False
 
 
-    def _get_xy_index(self, cell_ref):
+    def __get_xy_index(self, cell_ref):
         chars = [c for c in cell_ref if c.isalpha()]
         nums = [n for n in cell_ref if n.isnumeric()]
 
@@ -57,19 +57,19 @@ class SpreadsheetConnection:
         return alpha_index, num_index
 
 
-    def _is_single_cell(self, cell_ref):
+    def __is_single_cell(self, cell_ref):
         if len(cell_ref.split(':')) == 1:
             return True
         return False
 
 
-    def _check_single_cell(self, cell_ref):
-        if not self._is_single_cell(cell_ref):
+    def __check_single_cell(self, cell_ref):
+        if not self.__is_single_cell(cell_ref):
             raise ValueError(
                 "Expected a single cell reference. A cell range was given.")
 
 
-    def _cell_to_index(self, cell_ref):
+    def __cell_to_index(self, cell_ref):
         """Convert a spreadsheet style single cell or cell reference, to a zero 
         based numerical index.
 
@@ -79,11 +79,11 @@ class SpreadsheetConnection:
         """
 
         
-        alpha_index, num_index = self._get_xy_index(cell_ref)
+        alpha_index, num_index = self.__get_xy_index(cell_ref)
         return {"row_index": num_index, "column_index": alpha_index}
 
         
-    def _cell_range_to_index(self, cell_ref):
+    def __cell_range_to_index(self, cell_ref):
         """Convert a spreadsheet style range reference to zero-based numerical
         indecies that describe the start and end points of the cell range.
 
@@ -96,8 +96,8 @@ class SpreadsheetConnection:
 
         left_ref, right_ref = cell_ref.split(':')
 
-        left_alpha_index, left_num_index = self._get_xy_index(left_ref)
-        right_alpha_index, right_num_index = self._get_xy_index(right_ref)
+        left_alpha_index, left_num_index = self.__get_xy_index(left_ref)
+        right_alpha_index, right_num_index = self.__get_xy_index(right_ref)
 
         return {"row_start": left_num_index,
                 "row_end": right_num_index,
@@ -105,13 +105,13 @@ class SpreadsheetConnection:
                 "column_end": right_alpha_index}
 
 
-    def _check_for_lock(self):
+    def __check_for_lock(self):
         if not self.lock.locked():
             raise RuntimeError(
                 "Lock for this spreadsheet has not been aquired.")
 
 
-    def _check_numeric(self, value):
+    def __check_numeric(self, value):
         """Convert a string representation of a number to a float."""
         try:
             return float(value)
@@ -119,12 +119,12 @@ class SpreadsheetConnection:
             return value
 
 
-    def _check_list(self, data):
+    def __check_list(self, data):
         if not isinstance(data, list):
             raise ValueError("Expecting list type.")
 
 
-    def _check_1D_list(self, data):
+    def __check_1D_list(self, data):
         check_list(data)
         if isinstance(data[0], list):
             raise ValueError("Got 2D list when expecting 1D list.")
@@ -140,7 +140,7 @@ class SpreadsheetConnection:
         See 'set_cell' and 'set_cell_range' for more information.
         """
         
-        if self._is_single_cell(cell_ref):
+        if self.__is_single_cell(cell_ref):
             self.set_cell(sheet, cell_ref, value)
         else:
             self.set_cell_range(sheet, cell_ref, value)
@@ -154,18 +154,18 @@ class SpreadsheetConnection:
         'value' is a single string, int or float value.
         """
 
-        self._check_single_cell(cell_ref)
+        self.__check_single_cell(cell_ref)
         
-        self._check_for_lock()
+        self.__check_for_lock()
         
-        r = self._cell_to_index(cell_ref)
+        r = self.__cell_to_index(cell_ref)
         sheet = self.spreadsheet.sheets[sheet]
 
         if isinstance(value, list):
             raise ValueError("Expectin a single cell. \
             A list of cells was given.")
 
-        value = self._check_numeric(value)
+        value = self.__check_numeric(value)
         sheet[r["row_index"], r["column_index"]].value = value
 
 
@@ -182,29 +182,29 @@ class SpreadsheetConnection:
         [[A1, B1, C1], [A2, B2, C2], [A3, B3, C3]].
         """
 
-        self._check_for_lock()
+        self.__check_for_lock()
         
-        r = self._cell_range_to_index(cell_ref)
+        r = self.__cell_range_to_index(cell_ref)
         sheet = self.spreadsheet.sheets[sheet]
 
         if r["row_start"] == r["row_end"]: # A row of cells
-            self._check_1D_list(data)
+            self.__check_1D_list(data)
             sheet[r["row_start"],
                   r["column_start"]:r["column_end"] + 1].values = data
         
         elif r["column_start"] == r["column_end"]: # A column of cells
-            self._check_1D_list(data)
+            self.__check_1D_list(data)
             sheet[r["row_start"]:r["row_end"] + 1,
                   r["column_start"]].values = data
         
         else: # A grid of cells
-            self._check_list(data)
+            self.__check_list(data)
             for x, row in enumerate(data):
                 if not isinstance(row, list):
                     raise ValueError("Expected a list of cells.")
                 
                 for y, cell in enumerate(row):
-                    data[x][y] = self._check_numeric(cell)
+                    data[x][y] = self.__check_numeric(cell)
                 
             sheet[r["row_start"]:r["row_end"]+1,
                   r["column_start"]:r["column_end"]+1].values = data
@@ -217,7 +217,7 @@ class SpreadsheetConnection:
         See 'get_cell' and 'get_cell_range' for more information.
         """
 
-        if self._is_single_cell(cell_ref):
+        if self.__is_single_cell(cell_ref):
             return self.get_cell(sheet, cell_ref)
         else:
             return self.get_cell_range(sheet, cell_ref)
@@ -229,9 +229,9 @@ class SpreadsheetConnection:
         'cell_ref' is what one would use in LibreOffice Calc. Eg. "ABC945".
         """
 
-        self._check_single_cell(cell_ref)
+        self.__check_single_cell(cell_ref)
         
-        r = self._cell_to_index(cell_ref)
+        r = self.__cell_to_index(cell_ref)
         sheet = self.spreadsheet.sheets[sheet]
         
         return sheet[r["row_index"], r["column_index"]].value
@@ -243,7 +243,7 @@ class SpreadsheetConnection:
         'cell_ref' is what one would use in LibreOffice Calc. Eg. "ABC945".
         """
 
-        r = self._cell_range_to_index(cell_ref)
+        r = self.__cell_range_to_index(cell_ref)
         sheet = self.spreadsheet.sheets[sheet]
 
         # Cell ranges are requested as: [vertical area, horizontal area]
@@ -258,7 +258,6 @@ class SpreadsheetConnection:
         else: # A grid of cells
             return sheet[r["row_start"]:r["row_end"] + 1,
                          r["column_start"]:r["column_end"] + 1].values
-        
 
         
     def save_spreadsheet(self, filename, directory="./saved_spreadsheets/"):
