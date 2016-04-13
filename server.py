@@ -207,65 +207,69 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
 
 if __name__ == "__main__":
-    # Set up logging
+
+    # Set up logging.
+    LOG_FILE = './log/server.log'
+    SOFFICE_LOG = './log/soffice.log'
     logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s',
                         datefmt='%Y%m%d %H:%M:%S',
-                        filename='./log/server.log',
+                        filename=LOG_FILE,
                         level=logging.DEBUG)
-    logging.info('Started')
-    logging.info('Killing any current soffice process')
-    # Kill any currently running soffice process
-    subprocess.call(['killall', 'soffice.bin'])
+    
+    logging.info('Starting calc_server.')
 
-    subprocess.call(['rm', '/tmp/OSL_PIPE_1001_soffice_headless'])
-
-    logging.info('Starting soffice process')
-    # Start the headless soffice process on the server
-    command = '/usr/bin/soffice --accept="pipe,name=' + SOFFICE_PIPE + ';urp;" --norestore --nologo --nodefault --headless'
-    logfile = open("./log/soffice.log", "w")
+    logging.info('Starting the soffice process.')
+    command = '/usr/bin/soffice --accept="pipe,name=' + SOFFICE_PIPE +';urp;"\
+    --norestore --nologo --nodefault --headless'
+    
+    logfile = open(SOFFICE_LOG, "w")
     subprocess.Popen(command, shell=True, stdout=logfile, stderr=logfile)
 
-    # Make a connection to soffice
-    attempts = 0
+    # Make a connection to soffice and fail if it can not connect
+    MAX_ATTEMPTS = 60
+    attempt = 0
     while 1:
+        if attempt > MAX_ATTEMPTS: # soffice process isin't coming up
+            raise RuntimeError("Could not connect to soffice process.")
+
         try:
-            if attempts > 300: # soffice process isin't coming up
-                exit()
             soffice = pyoo.Desktop(pipe=SOFFICE_PIPE)
             logging.info("Connected to soffice.")
             break
+        
         except NoConnectException:
-            logging.debug('Could not connect to soffice process. Attempt no: ' + str(attempts+1))
-            attempts += 1
+            attempt += 1
             sleep(1)
 
     # Start server initialisation
     HOST, PORT = "localhost", 5555
-
     server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
     
     # create documents for each file in ./spreadsheets
-    docs = [ f for f in listdir(SPREADSHEETS_PATH) if isfile(join(SPREADSHEETS_PATH,f)) ]
+    files = listdir(SPREADSHEETS_PATH)
+    docs = [f for f in files if isfile(join(SPREADSHEETS_PATH, f))]
+
     server.spreadsheets = {}
-    server.locks = {} # a lock for each spreadsheet
+    server.locks = {} # A lock for each spreadsheet
     for doc in docs:
-        if doc[0] != '.' :
-            logging.info("Loading " + doc)
-            server.spreadsheets[doc] = soffice.open_spreadsheet(SPREADSHEETS_PATH + "/" + doc)
-            server.locks[doc] = threading.Lock()
+        if doc[0] == '.' :
+            continue
+        
+        logging.info("Loading " + doc)
+        server.spreadsheets[doc] = soffice.open_spreadsheet(
+            SPREADSHEETS_PATH + "/" + doc)
+        server.locks[doc] = threading.Lock()
 
-    # Start a thread with the server -- that thread will then start one
-    # more thread for each request
+    # Start the main server thread. This server thread will start a
+    # new thread to handle each client connection.
     server_thread = threading.Thread(target=server.serve_forever)
-    
-    # Don't exit the server thread when the main thread terminates
-    server_thread.daemon = False
-    logging.info('Server starting')
+    server_thread.daemon = False # Gracefully stop child threads
     server_thread.start()
+    logging.info("Server thread running. Waiting on connections...")
 
-    # Update spreadsheets thread
+    # This thread monitors the SPREADSHEETS directory to add or remove
+    # spreadsheets
     monitor_thread = MonitorThread()
     monitor_thread.daemon = True
     monitor_thread.start()
     
-    logging.info("Server thread running. Waiting on connections...")
