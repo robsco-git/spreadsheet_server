@@ -2,18 +2,20 @@ This tool was built to aid rapid web tool development where the logic was
 already implemented in Microsoft Excel/LibreOffice Calc. Instead of rewriting
 the logic from scratch, this tool was born.
 
-It has been developed to work on a headless GNU/Linux system.
+It has been developed to work on a headless GNU/Linux system where the server
+and client are on the same machine.
 
 --------
 Features
 --------
-* 'Instant' access to cells in the spreadsheets because they open in LibreOffice
-Calc.
+* 'Instant' access to cells in the spreadsheets because they open in
+LibreOffice Calc.
 * All the function calculation support and power of LibreOffice Calc.
-* Server requests are threaded so concurrent connections are supported.
-* Each spreadsheet can be independently locked and unlocked to deal with state
-changes in the spreadsheet.
-* Spreadsheets can be saved - for debugging purposes.
+* Server requests are threaded so concurrent connections to different
+spreadsheets is supported.
+* A given spreadsheet is locked when it is accessed to prevent state
+irregularities accross multiple concurrent connections to the same spreadsheet.
+* Spreadsheets can be saved - useful for debugging purposes.
 
 ------------
 How it works
@@ -21,8 +23,8 @@ How it works
 A LibreOffice instance is launched by 'server.py' in a headless state.
 By default, the './spreadsheets' directory is polled every 60 seconds for file
 changes.
-New spreadsheets in the directoy are opened with LibreOffice and removed spreadsheets are closed
-in LibreOffice.
+New spreadsheets in the directoy are opened with LibreOffice and removed
+spreadsheets are closed in LibreOffice.
 The 'client_python2.py' connects to the server and can update cells and retrieve
 their calculated content.
 
@@ -33,7 +35,7 @@ Server:
 	LibreOffice Calc
 	python3
 	virtualenv created with '--system-site-packages' argument
-		   (For example: "virtualenv --system-site-packages -p python3 venv")
+	(For example: "virtualenv --system-site-packages -p python3 venv")
 
 	Python packages installed to the virtualenv:
 	pyoo (for the connection to LibreOffice)
