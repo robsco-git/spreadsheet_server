@@ -18,6 +18,7 @@ import logging
 from math import pow
 from com.sun.star.uno import RuntimeException
 import traceback
+from werkzeug.utils import secure_filename
 
 class SpreadsheetConnection:
     """Handles connections to the spreadsheets opened by soffice (LibreOffice).
@@ -93,7 +94,6 @@ class SpreadsheetConnection:
 
         Returned is: {"row_index": int, "column_index": int}.
         """
-
         
         alpha_index, num_index = self.__get_xy_index(cell_ref)
         return {"row_index": num_index, "column_index": alpha_index}
@@ -150,7 +150,7 @@ class SpreadsheetConnection:
 
 
     def set_cells(self, sheet, cell_ref, value):
-        """Sets the value(s) of a single cell or a cell range. This can be used
+        """Set the value(s) for a single cell or a cell range. This can be used
         when it is not known if 'cell_ref' refers to a single cell or a range
 
         See 'set_cell' and 'set_cell_range' for more information.
@@ -193,7 +193,7 @@ class SpreadsheetConnection:
 
         For a one dimensional (only horizontal or only vertical) range of 
         cells, 'data' is a list. For a two dimensional range of cells, 'data' 
-        is a list within a list. For example setting the 'cell_ref' "A1:C3"
+        is a list of lists. For example setting the 'cell_ref' "A1:C3"
         requires 'data' of the format:
         [[A1, B1, C1], [A2, B2, C2], [A3, B3, C3]].
         """
@@ -242,7 +242,10 @@ class SpreadsheetConnection:
     def get_cell(self, sheet, cell_ref):
         """Returns the value of a single cell.
 
-        'cell_ref' is what one would use in LibreOffice Calc. Eg. "ABC945".
+        'sheet' is either a 0-based index or the string name of the sheet. 
+        'cell_ref' is what one would use in LibreOffice Calc. Eg. "A3".
+
+        A single cell value is returned.
         """
 
         self.__check_single_cell(cell_ref)
@@ -256,7 +259,11 @@ class SpreadsheetConnection:
     def get_cell_range(self, sheet, cell_ref):
         """Returns the values of a range of cells.
         
-        'cell_ref' is what one would use in LibreOffice Calc. Eg. "ABC945".
+        'sheet' is either a 0-based index or the string name of the sheet. 
+        'cell_ref' is what one would use in LibreOffice Calc. Eg. "A3:F75".
+
+        A list of cell values is returned for a one dimensional range of cells.
+        A list of lists is returned for a two dimensional range of cells.
         """
 
         r = self.__cell_range_to_index(cell_ref)
@@ -276,14 +283,16 @@ class SpreadsheetConnection:
                          r["column_start"]:r["column_end"] + 1].values
 
         
-    def save_spreadsheet(self, filename, directory="./saved_spreadsheets/"):
+    def save_spreadsheet(self, filename):
         """Save the spreadsheet in it's current state.
         
         'filename' is the name of the file.
-        
         """
 
+        SAVE_PATH = "./saved_spreadsheets/"
+
         if self.lock.locked():
-            self.spreadsheet.save(directory + filename)
+            filename = secure_filename(filename)
+            self.spreadsheet.save(SAVE_PATH + filename)
         else:
             return "Spreadsheet not locked"

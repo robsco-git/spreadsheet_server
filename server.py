@@ -55,7 +55,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         failure to connect to the client, otherwise a string of the message is
         returned.
         """
-        
+
         recv = self.request.recv(4096)
         if recv == b'':
             # The connection is closed.
@@ -274,7 +274,3 @@ if __name__ == "__main__":
     monitor_thread.daemon = True
     monitor_thread.start()
 
-    print("""calc_server version 69, Copyright (C) year name of author
-calc_server comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome
-to redistribute it under certain conditions; type `show c'
-for details.""")

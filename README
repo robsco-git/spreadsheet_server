@@ -21,7 +21,7 @@ How it works
 A LibreOffice instance is launched by 'server.py' in a headless state.
 By default, the './spreadsheets' directory is polled every 60 seconds for file
 changes.
-New spreadsheets are opened with LibreOffice and deleted spreadsheets are closed
+New spreadsheets in the directoy are opened with LibreOffice and removed spreadsheets are closed
 in LibreOffice.
 The 'client_python2.py' connects to the server and can update cells and retrieve
 their calculated content.
@@ -34,7 +34,10 @@ Server:
 	python3
 	virtualenv created with '--system-site-packages' argument
 		   (For example: "virtualenv --system-site-packages -p python3 venv")
-	pyoo installed to the virtualenv - "pip install pyoo"
 
+	Python packages installed to the virtualenv:
+	pyoo (for the connection to LibreOffice)
+	werkzeug (for securing filenames when saving spreadsheets)
+	
 Client:
 	python2

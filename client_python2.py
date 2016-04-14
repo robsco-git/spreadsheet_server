@@ -21,65 +21,105 @@ import traceback
 class SpreadsheetClient:
     def __init__(self, ip, port, spreadsheet):
         try:
-            self.sock = self.connect(ip, port)
+            self.sock = self.__connect(ip, port)
         except socket.error:
-            raise Exception("Could not connect to server!")
+            raise RuntimeError("Could not connect to the server.")
         else:
-            self.set_spreadsheet(spreadsheet)
-        
-    def connect(self, ip, port):
+            self.__set_spreadsheet(spreadsheet)
+
+            
+    def __connect(self, ip, port):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((ip, port))
         return sock
-                
-    def set_spreadsheet(self, spreadsheet):
+
+    
+    def __set_spreadsheet(self, spreadsheet):
         self.__send(["SPREADSHEET", spreadsheet])
-        if self.__receive() == "OK":
-            return True
-        else:
-            raise Exception("Spreadsheet could not be set!")
+        if self.__receive() != "OK":
+            raise RuntimeError("Could not set the spreadsheet.")
 
-    def set_cells(self, sheet, cell_range, data):
-        self.__send(["SET", sheet, cell_range, data])
-        if self.__receive() == "OK":
-            return True
-        else:
-            raise Exception("Could not set cells!")
 
-    def get_cells(self, sheet, cell_range):
-        self.__send(["GET", sheet, cell_range])
-        return self.__receive()
+    def set_cells(self, sheet, cell_ref, data):
+        """Set the value(s) for a single cell or a cell range.
+
+        'sheet' is either a 0-based index or the string name of the sheet. 
+        'cell_ref' is a LibreOffice style cell reference. eg. "A1" or "D7:G42".
+
+        For a single cell, 'data' is a single string, int or float value.
+
+        For a one dimensional (only horizontal or only vertical) range of 
+        cells, 'data' is a list. For a two dimensional range of cells, 'data' 
+        is a list of lists. For example setting the 'cell_ref' "A1:C3"
+        requires 'data' of the format:
+        [[A1, B1, C1], [A2, B2, C2], [A3, B3, C3]].
+        """
         
+        self.__send(["SET", sheet, cell_ref, data])
+
+        if self.__receive() != "OK":
+            raise Exception("Could not set cell(s): '" + cell_ref + "'.")
+
+        
+    def get_cells(self, sheet, cell_ref):
+        """Get the value of a single cell or a cell range from the server 
+        and return it or them.
+        
+        'sheet' is either a 0-based index or the string name of the sheet.   
+        'cell_ref' is what one would use in LibreOffice Calc. Eg. "ABC945" or 
+        "A3:F75".
+
+        A single cell is returned for a single value.
+        A list of cell values is returned for a one dimensional range of cells.
+        A list of lists is returned for a two dimensional range of cells.
+        """
+
+        self.__send(["GET", sheet, cell_ref])
+        cells = self.__receive()
+
+        if cells == "ERROR":
+            raise Exception("Could not get cell(s): '" + cell_ref + "'.")
+        
+        return cells
+
+    
     def save_spreadsheet(self, filename):
+        """Save the spreadsheet in its current state on the server."""
+        
         self.__send(["SAVE", filename])
         return self.__receive()
-        
-    def __send(self, msg):
-        try:
-            # endoce msg into json then send over the socket
-            self.sock.sendall(json.dumps(msg, encoding='utf-8'))
-            # print(msg)
-        except:
-            raise Exception("Could not send message to server")
-            traceback.print_exc()
-            print("Connection error")
 
+    
+    def __send(self, msg):
+        """Encode msg into json and then send it over the socket."""
+        try:
+            self.sock.sendall(json.dumps(msg, encoding='utf-8'))
+        except:
+            traceback.print_exc()
+            raise Exception("Could not send message to server")
+            
+
+            
     def __receive(self):
-        # convert the received utf-8 bytes into a string -> load the object via json
+        """Receive a message from the client, onvert the received utf-8 bytes 
+        into a string then decode if from json."""
+        
         recv = self.sock.recv(4096)
         if recv == b'':
-            # connection is closed
+            # The connection has been closed.
             raise Exception("Connection to server closed!")
         
         received = json.loads(recv, encoding="utf-8")
-        # print("Received: " + str(received))
         return received
-            
+
+    
     def disconnect(self):
+        """Disconnect from the server."""
+        
         try:
             self.sock.shutdown(socket.SHUT_RDWR)
         except socket.error:
-            # client already disconnected
+            # The client has already disconnected
             pass
         self.sock.close()
         
