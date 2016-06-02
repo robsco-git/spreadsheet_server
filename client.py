@@ -17,9 +17,16 @@
 import socket
 import json
 import traceback
+import sys
+
+PY2 = sys.version_info[0] == 2
+PY3 = sys.version_info[0] == 3
 
 class SpreadsheetClient:
     def __init__(self, ip, port, spreadsheet):
+        if not PY2 and not PY3:
+            raise RuntimeError("Python version not supported.")
+        
         try:
             self.sock = self.__connect(ip, port)
         except socket.error:
@@ -92,12 +99,18 @@ class SpreadsheetClient:
     
     def __send(self, msg):
         """Encode msg into json and then send it over the socket."""
+
+        if PY2:
+            json_msg = json.dumps(msg, encoding='utf-8')
+        else:
+            json_msg = json.dumps(msg)
+            json_msg = bytes(json_msg, "utf-8")
+
         try:
-            self.sock.sendall(json.dumps(msg, encoding='utf-8'))
+            self.sock.sendall(json_msg)
         except:
             traceback.print_exc()
             raise Exception("Could not send message to server")
-            
 
             
     def __receive(self):
@@ -108,8 +121,13 @@ class SpreadsheetClient:
         if recv == b'':
             # The connection has been closed.
             raise Exception("Connection to server closed!")
-        
-        received = json.loads(recv, encoding="utf-8")
+
+        if PY2:
+            received = json.loads(recv, encoding="utf-8")
+        else:
+            received = str(recv, encoding="utf-8")
+            received = json.loads(received)
+            
         return received
 
     

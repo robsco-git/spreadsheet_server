@@ -15,16 +15,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import random
-from client_python2 import SpreadsheetClient
+from client import SpreadsheetClient
 
 if __name__ == "__main__":
     example_spreadsheet = "example.ods"
     client = SpreadsheetClient("localhost", 5555, example_spreadsheet)
     
     cell_range = "A1:C3"
-    print "Cells " + cell_range
+    print("Cells " + cell_range)
     all_values = client.get_cells('Sheet1', cell_range)
-    print all_values
+    print(all_values)
     client.disconnect()
-
-        

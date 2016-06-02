@@ -25,7 +25,7 @@ By default, the './spreadsheets' directory is polled every 60 seconds for file
 changes.
 New spreadsheets in the directoy are opened with LibreOffice and removed
 spreadsheets are closed in LibreOffice.
-The 'client_python2.py' connects to the server and can update cells and retrieve
+The 'client.py' connects to the server and can update cells and retrieve
 their calculated content.
 
 ------------
@@ -42,4 +42,4 @@ Server:
 	werkzeug (for securing filenames when saving spreadsheets)
 	
 Client:
-	python2
+	Works with both python2 and python3.
