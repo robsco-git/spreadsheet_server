@@ -217,7 +217,7 @@ if __name__ == "__main__":
                         filename=LOG_FILE,
                         level=logging.DEBUG)
     
-    logging.info('Starting calc_server.')
+    logging.info('Starting spreadsheet_server.')
 
     logging.info('Starting the soffice process.')
     command = '/usr/bin/soffice --accept="pipe,name=' + SOFFICE_PIPE +';urp;"\
