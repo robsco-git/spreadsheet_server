@@ -208,7 +208,8 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
 
 if __name__ == "__main__":
-
+    print('Starting spreadsheet_server...')
+    
     # Set up logging.
     LOG_FILE = './log/server.log'
     SOFFICE_LOG = './log/soffice.log'
@@ -216,6 +217,8 @@ if __name__ == "__main__":
                         datefmt='%Y%m%d %H:%M:%S',
                         filename=LOG_FILE,
                         level=logging.DEBUG)
+
+    print('Logging to: ' + LOG_FILE)
     
     logging.info('Starting spreadsheet_server.')
 
@@ -266,6 +269,7 @@ if __name__ == "__main__":
     server_thread = threading.Thread(target=server.serve_forever)
     server_thread.daemon = False # Gracefully stop child threads
     server_thread.start()
+
     logging.info("Server thread running. Waiting on connections...")
 
     # This thread monitors the SPREADSHEETS directory to add or remove
@@ -274,3 +278,4 @@ if __name__ == "__main__":
     monitor_thread.daemon = True
     monitor_thread.start()
 
+    print('Up and listening for connections!')
