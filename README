@@ -12,10 +12,17 @@ Features
 LibreOffice Calc.
 * All the function calculation support and power of LibreOffice Calc.
 * Server requests are threaded so concurrent connections to different
-spreadsheets is supported.
-* A given spreadsheet is locked when it is accessed to prevent state
-irregularities accross multiple concurrent connections to the same spreadsheet.
+spreadsheets are supported.
+* A given spreadsheet is locked (within python, not on disk) when it is accessed
+to prevent state irregularities accross multiple concurrent connections to the
+same spreadsheet.
 * Spreadsheets can be saved - useful for debugging purposes.
+
+-------------
+Example Usage
+-------------
+Have a look at example_client.py for an overview of how to use the functions
+exposed by client.py.
 
 ------------
 How it works
