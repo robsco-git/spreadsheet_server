@@ -247,7 +247,12 @@ if __name__ == "__main__":
 
     # Start server initialisation
     HOST, PORT = "localhost", 5555
-    server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
+
+    try:
+        server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
+    except OSError:
+        print("Error: The port is in use. Maybe the server is already running?")
+        exit()
     
     # create documents for each file in ./spreadsheets
     files = listdir(SPREADSHEETS_PATH)
