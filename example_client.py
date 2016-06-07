@@ -32,9 +32,9 @@ if __name__ == "__main__":
     print(cell_value)
 
     # Set a one dimensional cell range.
-    # Cells are set using the format: [[A1, B1], [A2, B2], [A3, B3]]
-    cell_values = [[6, 5], [4, 3], [2, 1]]
-    sc.set_cells(SHEET_NAME, "A1:B3", cell_values)
+    # Cells are set using the format: [A1, A2, A3]
+    cell_values = [1, 2, 3]
+    sc.set_cells(SHEET_NAME, "A1:A3", cell_values)
 
     # Retrieve one dimensional cell range.
     cell_values = sc.get_cells(SHEET_NAME, "C1:C3")
