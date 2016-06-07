@@ -241,7 +241,7 @@ if __name__ == "__main__":
             logging.info("Connected to soffice.")
             break
         
-        except NoConnectException:
+        except OSError:
             attempt += 1
             sleep(1)
 
