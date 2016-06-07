@@ -141,12 +141,12 @@ class SpreadsheetConnection:
 
 
     def __check_1D_list(self, data):
-        check_list(data)
+        self.__check_list(data)
         if isinstance(data[0], list):
             raise ValueError("Got 2D list when expecting 1D list.")
 
         for x, cell in enumerate(data):
-            data[x] = check_numeric(cell)
+            data[x] = self.__check_numeric(cell)
 
 
     def set_cells(self, sheet, cell_ref, value):
