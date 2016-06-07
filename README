@@ -14,13 +14,19 @@ LibreOffice Calc.
 * Server requests are threaded so concurrent connections to different
 spreadsheets are supported.
 * A given spreadsheet is locked (within python, not on disk) when it is accessed
-to prevent state irregularities accross multiple concurrent connections to the
+to prevent state irregularities across multiple concurrent connections to the
 same spreadsheet.
 * Spreadsheets can be saved - useful for debugging purposes.
 
 -------------
-Example Usage
+Usage
 -------------
+Place your spreadsheets in './spreadsheets'.
+
+Running the server (make sure you have a correctly set up virtualenv and
+the required packages installed):
+python server.py
+
 Have a look at example_client.py for an overview of how to use the functions
 exposed by client.py.
 
@@ -30,7 +36,7 @@ How it works
 A LibreOffice instance is launched by 'server.py' in a headless state.
 By default, the './spreadsheets' directory is polled every 60 seconds for file
 changes.
-New spreadsheets in the directoy are opened with LibreOffice and removed
+New spreadsheets in the directory are opened with LibreOffice and removed
 spreadsheets are closed in LibreOffice.
 The 'client.py' connects to the server and can update cells and retrieve
 their calculated content.
