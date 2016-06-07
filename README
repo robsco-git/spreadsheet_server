@@ -1,9 +1,12 @@
-This tool was built to aid rapid web tool development where the logic was
-already implemented in Microsoft Excel/LibreOffice Calc. Instead of rewriting
-the logic from scratch, this tool was born.
+------------
+Introduction
+------------
+spreadsheet_server was built to aid rapid web tool development where the logic
+was already implemented in Microsoft Excel/LibreOffice Calc. Instead of
+rewriting the logic from scratch, this tool was born.
 
-It has been developed to work on a headless GNU/Linux system where the server
-and client are on the same machine.
+The tool has been developed to work on a headless GNU/Linux system where the
+server and client are on the same machine.
 
 --------
 Features
@@ -18,16 +21,16 @@ to prevent state irregularities across multiple concurrent connections to the
 same spreadsheet.
 * Spreadsheets can be saved - useful for debugging purposes.
 
--------------
+-----
 Usage
--------------
+-----
 Place your spreadsheets in './spreadsheets'.
 
-Running the server (make sure you have a correctly set up virtualenv and
-the required packages installed):
+Make sure you have a correctly set up virtualenv and required packages installed
+(see below), then run the server:
 python server.py
 
-Have a look at example_client.py for an overview of how to use the functions
+Have a look at the example_client.py for an overview of how to use the functions
 exposed by client.py.
 
 ------------
@@ -48,11 +51,11 @@ Server:
 	LibreOffice Calc
 	python3
 	virtualenv created with '--system-site-packages' argument
-	(For example: "virtualenv --system-site-packages -p python3 venv")
+	For example: "virtualenv --system-site-packages -p python3 venv"
 
 	Python packages installed to the virtualenv:
 	pyoo (for the connection to LibreOffice)
 	werkzeug (for securing filenames when saving spreadsheets)
-	
+
 Client:
-	Works with both python2 and python3.
+	python2 or python3.
