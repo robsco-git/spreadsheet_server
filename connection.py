@@ -16,7 +16,6 @@
 
 import logging
 from math import pow
-from com.sun.star.uno import RuntimeException
 import traceback
 from werkzeug.utils import secure_filename
 

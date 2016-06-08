@@ -16,7 +16,6 @@
 
 import logging
 import pyoo
-from com.sun.star.connection import NoConnectException
 import subprocess
 import threading
 import socketserver
@@ -27,7 +26,6 @@ from time import sleep
 from connection import SpreadsheetConnection
 import json
 import traceback
-import textwrap
 
 SOFFICE_PIPE = "soffice_headless"
 SPREADSHEETS_PATH = "./spreadsheets"
