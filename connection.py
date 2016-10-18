@@ -224,6 +224,11 @@ class SpreadsheetConnection:
             sheet[r["row_start"]:r["row_end"]+1,
                   r["column_start"]:r["column_end"]+1].values = data
 
+
+    def get_sheet_names(self):
+        """Returns a list of all sheet names in the workbook."""
+        return [s.name for s in self.spreadsheet.sheets]
+        
             
     def get_cells(self, sheet, cell_ref):
         """Gets the value(s) of a single cell or a cell range. This can be used

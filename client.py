@@ -67,6 +67,16 @@ class SpreadsheetClient:
         if self.__receive() != "OK":
             raise Exception("Could not set cell(s): '" + cell_ref + "'.")
 
+
+    def get_sheet_names(self):
+        """Returns a list of all sheet names in the workbook."""
+        self.__send(["GET_SHEETS"])
+        sheet_names = self.__receive()
+
+        if sheet_names == "ERROR":
+            raise Exception("Could not get sheet names")
+        
+        return sheet_names
         
     def get_cells(self, sheet, cell_ref):
         """Get the value of a single cell or a cell range from the server 

@@ -24,6 +24,10 @@ if __name__ == "__main__":
     SHEET_NAME = "Sheet1"
     sc = SpreadsheetClient("localhost", 5555, EXAMPLE_SPREADSHEET)
     
+    # Get sheet names
+    sheet_names = sc.get_sheet_names()
+    print(sheet_names)
+
     # Set a cell value
     sc.set_cells(SHEET_NAME, "A1", 5)
 

@@ -120,6 +120,13 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     self.__send(cells)
                 else:
                     self.__send("ERROR")
+
+            elif data[0] == "GET_SHEETS":
+                sheet_names = self.con.get_sheet_names()
+                if sheet_names != False:
+                    self.__send(sheet_names)
+                else:
+                    self.__send("ERROR")
                     
             elif data[0] == "SAVE":
                 self.con.save_spreadsheet(data[1])
