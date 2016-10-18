@@ -21,7 +21,7 @@ import threading
 import socketserver
 from socket import SHUT_RDWR 
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, isdir, join
 from time import sleep
 from connection import SpreadsheetConnection
 import json
@@ -197,10 +197,23 @@ class MonitorThread(threading.Thread):
 
     
     def run(self):
+        def scan_directory(d):
+            """Recursively scan a directory for spreadsheets."""
+            dir_contents = listdir(d)
+            
+            for f in dir_contents:
+                full_path = join(d, f)
+                if isfile(full_path):
+                    # Remove SPREADSHEETS_PATH from the path
+                    relative_path = full_path.split(SPREADSHEETS_PATH)[1][1:]
+                    print(relative_path)
+                    self.docs.append(relative_path)
+                elif isdir(full_path):
+                    scan_directory(full_path)
+            
         while True:
-            spreadsheets = listdir(SPREADSHEETS_PATH)
-            self.docs = [f for f in spreadsheets if
-                    isfile(join(SPREADSHEETS_PATH, f))]
+            self.docs = []
+            scan_directory(SPREADSHEETS_PATH)
 
             self.__check_removed()
             self.__check_added()
