@@ -202,11 +202,15 @@ class MonitorThread(threading.Thread):
             dir_contents = listdir(d)
             
             for f in dir_contents:
+
+                # Ignore particular files
+                if f[:7] == ".~lock." or f == ".gitignore":
+                    continue
+                
                 full_path = join(d, f)
                 if isfile(full_path):
                     # Remove SPREADSHEETS_PATH from the path
                     relative_path = full_path.split(SPREADSHEETS_PATH)[1][1:]
-                    print(relative_path)
                     self.docs.append(relative_path)
                 elif isdir(full_path):
                     scan_directory(full_path)
