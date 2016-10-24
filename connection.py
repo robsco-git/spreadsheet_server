@@ -153,6 +153,8 @@ class SpreadsheetConnection:
         for x, cell in enumerate(data):
             data[x] = self.__convert_to_float_if_numeric(cell)
 
+        return data
+
 
     def set_cells(self, sheet, cell_ref, value):
         """Set the value(s) for a single cell or a cell range. This can be used
@@ -209,12 +211,12 @@ class SpreadsheetConnection:
         sheet = self.spreadsheet.sheets[sheet]
 
         if r["row_start"] == r["row_end"]: # A row of cells
-            self.__check_1D_list(data)
+            data = self.__check_1D_list(data)
             sheet[r["row_start"],
                   r["column_start"]:r["column_end"] + 1].values = data
         
         elif r["column_start"] == r["column_end"]: # A column of cells
-            self.__check_1D_list(data)
+            data = self.__check_1D_list(data)
             sheet[r["row_start"]:r["row_end"] + 1,
                   r["column_start"]].values = data
         
