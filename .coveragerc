@@ -1,0 +1,4 @@
+[report]
+omit =
+    */venv/*
+    /usr/lib/libreoffice/program/uno.py

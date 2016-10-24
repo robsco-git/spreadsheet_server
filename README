@@ -59,3 +59,10 @@ Server:
 
 Client:
 	python2 or python3.
+
+-----
+Tests
+-----
+The tests are currently being written.
+You can run the all the current tests with 'python -m unittest discover'.
+Use './coverage.sh' to run the coverage analysis of the current tests and have a look in the generated htmlcov directory.
