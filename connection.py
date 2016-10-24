@@ -129,8 +129,11 @@ class SpreadsheetConnection:
                 "Lock for this spreadsheet has not been aquired.")
 
 
-    def __check_numeric(self, value):
-        """Convert a string representation of a number to a float."""
+    def __convert_to_float_if_numeric(self, value):
+        """If value is a string representation of a number, convert it to a 
+        float. Otherwise, simply return the string.
+        """
+        
         try:
             return float(value)
         except ValueError:
@@ -148,7 +151,7 @@ class SpreadsheetConnection:
             raise ValueError("Got 2D list when expecting 1D list.")
 
         for x, cell in enumerate(data):
-            data[x] = self.__check_numeric(cell)
+            data[x] = self.__convert_to_float_if_numeric(cell)
 
 
     def set_cells(self, sheet, cell_ref, value):
@@ -183,7 +186,7 @@ class SpreadsheetConnection:
             raise ValueError("Expectin a single cell. \
             A list of cells was given.")
 
-        value = self.__check_numeric(value)
+        value = self.__convert_to_float_if_numeric(value)
         sheet[r["row_index"], r["column_index"]].value = value
 
 
@@ -222,7 +225,7 @@ class SpreadsheetConnection:
                     raise ValueError("Expected a list of cells.")
                 
                 for y, cell in enumerate(row):
-                    data[x][y] = self.__check_numeric(cell)
+                    data[x][y] = self.__convert_to_float_if_numeric(cell)
                 
             sheet[r["row_start"]:r["row_end"]+1,
                   r["column_start"]:r["column_end"]+1].values = data
