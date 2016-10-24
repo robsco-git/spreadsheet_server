@@ -100,16 +100,6 @@ class TestConnection(unittest.TestCase):
         self.assertFalse(status)
 
 
-    def test_check_single_cell(self):
-        status = True
-        try:
-            self.ss_con._SpreadsheetConnection__check_single_cell("Q56")
-        except ValueError:
-            status = False
-            
-        self.assertTrue(status)
-        
-
     def test_check_not_single_cell(self):
         status = True
         try:
@@ -147,20 +137,6 @@ class TestConnection(unittest.TestCase):
         self.assertTrue(status)
 
 
-    def test_check_for_lock_with_lock(self):
-        self.ss_con.lock_spreadsheet()
-        
-        status = False
-        try:
-            self.ss_con._SpreadsheetConnection__check_for_lock()
-        except RuntimeError:
-            status = True
-
-        self.assertFalse(status)
-
-        self.ss_con.unlock_spreadsheet()
-
-
     def test_check_numeric(self):
         value = self.ss_con._SpreadsheetConnection__convert_to_float_if_numeric("1")
         self.assertTrue(type(value) is float)
@@ -170,16 +146,6 @@ class TestConnection(unittest.TestCase):
         value = self.ss_con._SpreadsheetConnection__convert_to_float_if_numeric("123A")
 
         self.assertTrue(type(value) is str)
-
-
-    def test_check_list(self):
-        status = False
-        try:
-            self.ss_con._SpreadsheetConnection__check_list([])
-        except ValueError:
-            status = True
-
-        self.assertFalse(status)
 
 
     def test_check_not_list(self):
@@ -193,14 +159,9 @@ class TestConnection(unittest.TestCase):
 
 
     def test_check_1D_list(self):
-        status = False
         data = ["1","2","3"]
-        try:
-            data = self.ss_con._SpreadsheetConnection__check_1D_list(data)
-        except ValueError:
-            status = True
+        data = self.ss_con._SpreadsheetConnection__check_1D_list(data)
 
-        self.assertFalse(status)
         self.assertEqual(data, [1.0, 2.0, 3.0])
 
     def test_check_1D_list_when_2D(self):
