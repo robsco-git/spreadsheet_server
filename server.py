@@ -29,7 +29,7 @@ import traceback
 
 SOFFICE_PIPE = "soffice_headless"
 SPREADSHEETS_PATH = "./spreadsheets"
-MONITOR_THREAD_FREQ = 60 # In seconds
+MONITOR_THREAD_FREQ = 5 # In seconds
 
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
     def __send(self, msg):
