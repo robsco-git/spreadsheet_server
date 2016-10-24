@@ -306,5 +306,6 @@ class SpreadsheetConnection:
         if self.lock.locked():
             filename = secure_filename(filename)
             self.spreadsheet.save(SAVE_PATH + filename)
+            return True
         else:
-            return "Spreadsheet not locked"
+            return False
