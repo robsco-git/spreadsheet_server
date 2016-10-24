@@ -67,6 +67,9 @@ class SpreadsheetConnection:
                 # The index for additional characters to the left are
                 # calculated c_index * 26^(n) where n is the characters
                 # position to the left.
+
+                # Need to increment c_index for correct multiplication
+                c_index += 1
                 alpha_index += c_index * pow(26, len(chars)-i-1)
 
         num_index = int(''.join(nums)) - 1 # zero-based
