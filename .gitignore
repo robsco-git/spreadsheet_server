@@ -8,3 +8,5 @@ spreadsheets/*
 log/*.log
 *.pyc
 saved_spreadsheets/*
+.coverage
+htmlcov
