@@ -26,15 +26,25 @@ class MonitorThread(threading.Thread):
     def __init__(self, spreadsheets, locks, soffice, spreadsheets_path,
                  monitor_frequency):
         
+        self._stop_thread = threading.Event()
+
         self.spreadsheets = spreadsheets
         self.locks = locks
         self.soffice = soffice
         self.spreadsheets_path = spreadsheets_path
         self.monitor_frequency = monitor_frequency
-        
-        super().__init__()
-    
 
+        super().__init__()
+     
+
+    def stop_thread(self):
+        self._stop_thread.set()
+
+        
+    def stopped(self):
+        return self._stop_thread.isSet()
+
+        
     def __load_spreadsheet(self, doc):
         logging.info("Loading " + doc)
         self.spreadsheets[doc] = self.soffice.open_spreadsheet(
@@ -106,7 +116,7 @@ class MonitorThread(threading.Thread):
                 elif isdir(full_path):
                     scan_directory(full_path)
             
-        while True:
+        while not self.stopped():
             self.docs = []
             scan_directory(self.spreadsheets_path)
 
@@ -114,4 +124,3 @@ class MonitorThread(threading.Thread):
             self.__check_added()
             
             sleep(self.monitor_frequency)
-

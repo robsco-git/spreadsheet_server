@@ -21,7 +21,7 @@ import threading
 from time import sleep
 from request_handler import ThreadedTCPRequestHandler, ThreadedTCPServer
 from monitor import MonitorThread
-
+from signal import SIGTERM, pause
 
 LOG_FILE = './log/server.log'
 SOFFICE_LOG = './log/soffice.log'
@@ -70,9 +70,9 @@ class SpreadsheetServer():
         --norestore --nologo --nodefault --headless'
 
         logfile = open(self.soffice_log, "w")
-        subprocess.Popen(command, shell=True, stdout=logfile, stderr=logfile)
+        self.soffice_process = subprocess.Popen(command, shell=True, stdout=logfile, stderr=logfile)
 
-
+        
     def __connect_to_soffice(self):
         """Make a connection to soffice and fail if it can not connect."""
         
@@ -115,9 +115,12 @@ class SpreadsheetServer():
 
         # Start the main server thread. This server thread will start a
         # new thread to handle each client connection.
-        server_thread = threading.Thread(target=self.server.serve_forever)
-        server_thread.daemon = False # Gracefully stop child threads
-        server_thread.start()
+
+        self.server_thread = threading.Thread(
+            target=self.server.serve_forever)
+        
+        self.server_thread.daemon = False # Gracefully stop child threads
+        self.server_thread.start()
 
         logging.info("Server thread running. Waiting on connections...")
 
@@ -126,16 +129,25 @@ class SpreadsheetServer():
         """This thread monitors the SPREADSHEETS directory to add or remove.
         """
         
-        monitor_thread = MonitorThread(self.spreadsheets, self.locks,
+        self.monitor_thread = MonitorThread(self.spreadsheets, self.locks,
                                        self.soffice, self.spreadsheets_path,
                                        self.monitor_frequency)
-        monitor_thread.daemon = True
-        monitor_thread.start()
+        self.monitor_thread.daemon = True
+        self.monitor_thread.start()
 
 
-    def kill_libreoffice():
-        command = 'killall soffice.bin'
-        subprocess.Popen(command, shell=True)
+    def stop(self):
+        """Stop all the threads and shutdown LibreOffice."""
+
+        # Stop the monitor thread
+        self.monitor_thread.stop_thread()
+        self.monitor_thread.join()
+
+        # Stop the ThreadedTCPServer
+        self.server.shutdown()
+
+        # Terminate the soffice.bin process
+        self.soffice_process.send_signal(SIGTERM)
 
     
     def run(self):
@@ -144,13 +156,20 @@ class SpreadsheetServer():
         self.__connect_to_soffice()
         self.__start_threaded_tcp_server()
         self.__start_monitor_thread()
-    
 
+            
 if __name__ == "__main__":
 
     print('Starting spreadsheet_server...')
 
     spreadsheet_server = SpreadsheetServer()
-    spreadsheet_server.run()
+    try:
+        spreadsheet_server.run()
+        print('Up and listening for connections!')
+        while True: sleep(100)
+        
+    except (KeyboardInterrupt, SystemExit):
+        print("Shutting down server...")
+        spreadsheet_server.stop()
+        
 
-    print('Up and listening for connections!')

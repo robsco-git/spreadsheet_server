@@ -21,6 +21,7 @@ import logging
 from connection import SpreadsheetConnection
 
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
+    
     def __send(self, msg):
         """Convert a message to JSON and send it to the client.
 
@@ -134,4 +135,3 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
-
