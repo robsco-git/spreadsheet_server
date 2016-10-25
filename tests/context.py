@@ -4,3 +4,4 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 
 from connection import SpreadsheetConnection
+from server import SpreadsheetServer

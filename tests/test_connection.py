@@ -2,7 +2,8 @@ import pyoo
 import unittest
 import threading
 import os
-from .context import SpreadsheetConnection
+from .context import SpreadsheetConnection, SpreadsheetServer
+from signal import SIGTERM
 
 TEST_SS = "example.ods"
 SOFFICE_PIPE = "soffice_headless"
@@ -11,7 +12,11 @@ SPREADSHEETS_PATH = "./spreadsheets"
 class TestConnection(unittest.TestCase):
     
     def setUp(self):
-        soffice = pyoo.Desktop(pipe=SOFFICE_PIPE)
+        self.spreadsheet_server = SpreadsheetServer()
+        self.spreadsheet_server._SpreadsheetServer__start_soffice()
+        self.spreadsheet_server._SpreadsheetServer__connect_to_soffice()
+
+        soffice = self.spreadsheet_server.soffice
         self.spreadsheet = soffice.open_spreadsheet(
             SPREADSHEETS_PATH + "/" + TEST_SS)
 
@@ -21,6 +26,8 @@ class TestConnection(unittest.TestCase):
 
     def tearDown(self):
         self.spreadsheet.close()
+        self.spreadsheet_server._SpreadsheetServer__kill_libreoffice()
+        self.spreadsheet_server._SpreadsheetServer__close_logfile()
         
         
     def test_lock_spreadsheet(self):
@@ -268,4 +275,3 @@ class TestConnection(unittest.TestCase):
         
 if __name__ == '__main__':
     unittest.main()
-    

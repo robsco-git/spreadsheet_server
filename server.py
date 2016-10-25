@@ -21,7 +21,7 @@ import threading
 from time import sleep
 from request_handler import ThreadedTCPRequestHandler, ThreadedTCPServer
 from monitor import MonitorThread
-from signal import SIGTERM, pause
+from signal import SIGTERM
 
 LOG_FILE = './log/server.log'
 SOFFICE_LOG = './log/soffice.log'
@@ -69,8 +69,9 @@ class SpreadsheetServer():
         command = '/usr/bin/soffice --accept="pipe,name=' + self.soffice_pipe +';urp;"\
         --norestore --nologo --nodefault --headless'
 
-        logfile = open(self.soffice_log, "w")
-        self.soffice_process = subprocess.Popen(command, shell=True, stdout=logfile, stderr=logfile)
+        self.logfile = open(self.soffice_log, "w")
+        self.soffice_process = subprocess.Popen(
+            command, shell=True, stdout=self.logfile, stderr=self.logfile)
 
         
     def __connect_to_soffice(self):
@@ -136,18 +137,38 @@ class SpreadsheetServer():
         self.monitor_thread.start()
 
 
-    def stop(self):
-        """Stop all the threads and shutdown LibreOffice."""
-
-        # Stop the monitor thread
+    def __stop_monitor_thread(self):
+        """Stop the monitor thread."""
+        
         self.monitor_thread.stop_thread()
         self.monitor_thread.join()
 
-        # Stop the ThreadedTCPServer
-        self.server.shutdown()
 
-        # Terminate the soffice.bin process
-        self.soffice_process.send_signal(SIGTERM)
+    def __stop_threaded_tcp_server(self):
+        """Stop the ThreadedTCPServer."""
+
+        self.server.shutdown()
+        
+
+    def __kill_libreoffice(self):
+        """Terminate the soffice.bin process."""
+
+        self.soffice_process.send_signal(SIGTERM)        
+        
+
+    def __close_logfile(self):
+        """Close the logfile."""
+        
+        self.logfile.close()
+        
+        
+    def stop(self):
+        """Stop all the threads and shutdown LibreOffice."""
+
+        self.__stop_monitor_thread()
+        self.__stop_threaded_tcp_server()
+        self.__kill_libreoffice()
+        self.__close_logfile()
 
     
     def run(self):
@@ -169,7 +190,7 @@ if __name__ == "__main__":
         while True: sleep(100)
         
     except (KeyboardInterrupt, SystemExit):
-        print("Shutting down server...")
+        print("Shutting down server. Please wait...")
         spreadsheet_server.stop()
         
 

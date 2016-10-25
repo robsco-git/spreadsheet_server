@@ -115,7 +115,7 @@ class MonitorThread(threading.Thread):
                     self.docs.append(relative_path)
                 elif isdir(full_path):
                     scan_directory(full_path)
-            
+
         while not self.stopped():
             self.docs = []
             scan_directory(self.spreadsheets_path)
