@@ -18,304 +18,139 @@ import logging
 import pyoo
 import subprocess
 import threading
-import socketserver
-from socket import SHUT_RDWR 
-from os import listdir
-from os.path import isfile, isdir, join
 from time import sleep
-from connection import SpreadsheetConnection
-import json
-import traceback
+from request_handler import ThreadedTCPRequestHandler, ThreadedTCPServer
+from monitor import MonitorThread
 
+
+LOG_FILE = './log/server.log'
+SOFFICE_LOG = './log/soffice.log'
+SOFFICE_HOST, SOFFICE_PORT = "localhost", 5555
 SOFFICE_PIPE = "soffice_headless"
 SPREADSHEETS_PATH = "./spreadsheets"
-MONITOR_THREAD_FREQ = 5 # In seconds
+MONITOR_FREQ = 5 # In seconds
 
-class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
-    def __send(self, msg):
-        """Convert a message to JSON and send it to the client.
 
-        The messages are sent as utf-8 encoded bytes
-        """
+class SpreadsheetServer():
 
-        json_msg = json.dumps(msg)
-        json_bytes = bytes(json_msg, "utf-8")
-
-        self.request.send(json_bytes)
+    def __init__(self, log_file=LOG_FILE, soffice_log=SOFFICE_LOG,
+                 soffice_host=SOFFICE_HOST, soffice_port=SOFFICE_PORT,
+                 soffice_pipe=SOFFICE_PIPE,
+                 spreadsheets_path=SPREADSHEETS_PATH,
+                 monitor_frequency=MONITOR_FREQ):
         
-        logging.debug("Sent: " + json.dumps(msg))
-
-
-    def __receive(self):
-        """Receive a message from the client, decode it from JSON and return.
+        self.log_file = log_file
+        self.soffice_log = soffice_log
+        self.soffice_host = soffice_host
+        self.soffice_port = soffice_port
+        self.soffice_pipe = soffice_pipe
+        self.monitor_frequency = monitor_frequency
         
-        The received messages are utf-8 encoded bytes. False is returned on 
-        failure to connect to the client, otherwise a string of the message is
-        returned.
-        """
+        self.spreadsheets_path = spreadsheets_path
+        self.spreadsheets = {}
+        self.locks = {} # A lock for each spreadsheet
 
-        recv = self.request.recv(4096)
-        if recv == b'':
-            # The connection is closed.
-            return False
-
-        recv_json = str(recv, encoding="utf-8")
-        recv_string = json.loads(recv_json)
         
-        logging.debug("Received: " + str(recv_string))
-        return recv_string
-
-
-    def __make_connection(self):
-        """Handle first request to server and check that it adheres to the
-        protocol.
-        """
+    def __logging(self):
+        """Set up logging."""
         
-        data = self.__receive()
-        if (data[0] != "SPREADSHEET"):
-            raise RuntimeError("Received incorrect connection string.")
+        logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s',
+                            datefmt='%Y%m%d %H:%M:%S',
+                            filename=self.log_file,
+                            level=logging.INFO)
 
-        self.con = SpreadsheetConnection(
-            self.server.spreadsheets[data[1]], self.server.locks[data[1]])
+        print('Logging to: ' + self.log_file)
+
+
+
+    def __start_soffice(self):
+
+        logging.info('Starting the soffice process.')
+        command = '/usr/bin/soffice --accept="pipe,name=' + self.soffice_pipe +';urp;"\
+        --norestore --nologo --nodefault --headless'
+
+        logfile = open(self.soffice_log, "w")
+        subprocess.Popen(command, shell=True, stdout=logfile, stderr=logfile)
+
+
+    def __connect_to_soffice(self):
+        """Make a connection to soffice and fail if it can not connect."""
         
-        self.__send("OK")
-        self.con.lock_spreadsheet()
+        MAX_ATTEMPTS = 60
 
+        attempt = 0
+        while 1:
+            if attempt > MAX_ATTEMPTS: # soffice process isin't coming up
+                raise RuntimeError("Could not connect to soffice process.")
 
-    def __close_connection(self):
-        """Unlock the spreadsheet and close the connection to the client."""
-        
-        try:
-            if self.con.lock.locked:
-                self.con.unlock_spreadsheet()
-        except UnboundLocalError:
-            # con was never created.
-            pass
-            
-        try:
-            self.request.shutdown(SHUT_RDWR)
-        except OSError:
-            # The client has already disconnected.
-            pass
-
-        self.request.close()
-
-
-    def __main_loop(self):
-        while True:
-            data = self.__receive()
-            
-            if data == False:
-                # The connection has been lost.
+            try:
+                self.soffice = pyoo.Desktop(pipe=SOFFICE_PIPE)
+                logging.info("Connected to soffice.")
                 break
-            
-            elif data[0] == "SET":
-                self.con.set_cells(data[1], data[2], data[3])
-                self.__send("OK")
-                
-            elif data[0] == "GET":
-                cells = self.con.get_cells(data[1], data[2])
 
-                if cells != False:
-                    self.__send(cells)
-                else:
-                    self.__send("ERROR")
+            except OSError:
+                attempt += 1
+                sleep(1)
 
-            elif data[0] == "GET_SHEETS":
-                sheet_names = self.con.get_sheet_names()
-                if sheet_names != False:
-                    self.__send(sheet_names)
-                else:
-                    self.__send("ERROR")
-                    
-            elif data[0] == "SAVE":
-                self.con.save_spreadsheet(data[1])
-                self.__send("OK")
-
-    
-    def handle(self):
-        """Make a connection to the client, run the main protocol loop and
-        close the connection.
+    def __start_threaded_tcp_server(self):
+        """Set up and start the TCP threaded server to handle incomming 
+        requests.
         """
 
-        self.__make_connection()
-        self.__main_loop()
-        self.__close_connection()
-
+        logging.info('Starting spreadsheet_server.')
         
-class MonitorThread(threading.Thread):
-    """Monitors the spreadsheet directory for changes."""
-
-    def __init__(self, spreadsheets, locks, soffice):
-        self.spreadsheets = spreadsheets
-        self.locks = locks
-        self.soffice = soffice
-        super().__init__()
-    
-    def __load_spreadsheet(self, doc):
-        logging.info("Loading " + doc)
-        self.spreadsheets[doc] = self.soffice.open_spreadsheet(
-            SPREADSHEETS_PATH + "/" + doc)
-        self.locks[doc] = threading.Lock()
-
-        
-    def __unload_spreadsheet(self, doc):
-        logging.info("Removing " + doc)
-        self.locks[doc].acquire()
-        self.spreadsheets[doc].close()
-        self.spreadsheets.pop(doc, None)
-        self.locks.pop(doc, None)
-
-        
-    def __check_added(self):
-        """Check for new spreadsheets and loads them into LibreOffice."""
-                    
-        for doc in self.docs:
-            if doc[0] != '.': # Ignore hidden files
-                found = False
-
-                for key, value in self.spreadsheets.items():
-                    if doc == key:
-                        found = True
-                        break
-
-                if found == False:
-                    self.__load_spreadsheet(doc)
-
-                    
-    def __check_removed(self):
-        """Check for any deleted or removed spreadsheets and remove them from 
-        LibreOffice.
-        """
+        try:
+            self.server = ThreadedTCPServer(
+                (self.soffice_host, self.soffice_port),
+                ThreadedTCPRequestHandler
+            )
             
-        removed_spreadsheets = []
-        for key, value in self.spreadsheets.items():
-            removed = True
-            for doc in self.docs:
-                if key == doc:
-                    removed = False
-                    break
-            if removed:
-                removed_spreadsheets.append(key)
+        except OSError:
+            print("Error: The port is in use. Maybe the server is already running?")
+            exit()
 
-        for doc in removed_spreadsheets:
-            self.__unload_spreadsheet(doc)
+
+        self.server.spreadsheets = self.spreadsheets
+        self.server.locks = self.locks
+
+        # Start the main server thread. This server thread will start a
+        # new thread to handle each client connection.
+        server_thread = threading.Thread(target=self.server.serve_forever)
+        server_thread.daemon = False # Gracefully stop child threads
+        server_thread.start()
+
+        logging.info("Server thread running. Waiting on connections...")
+
+
+    def __start_monitor_thread(self):
+        """This thread monitors the SPREADSHEETS directory to add or remove.
+        """
+        
+        monitor_thread = MonitorThread(self.spreadsheets, self.locks,
+                                       self.soffice, self.spreadsheets_path,
+                                       self.monitor_frequency)
+        monitor_thread.daemon = True
+        monitor_thread.start()
+
+
+    def kill_libreoffice():
+        command = 'killall soffice.bin'
+        subprocess.Popen(command, shell=True)
 
     
     def run(self):
-        def scan_directory(d):
-            """Recursively scan a directory for spreadsheets."""
-            dir_contents = listdir(d)
-            
-            for f in dir_contents:
-
-                # Ignore particular files
-                if f[:7] == ".~lock." or f == ".gitignore":
-                    continue
-                
-                full_path = join(d, f)
-                if isfile(full_path):
-                    # Remove SPREADSHEETS_PATH from the path
-                    relative_path = full_path.split(SPREADSHEETS_PATH)[1][1:]
-                    self.docs.append(relative_path)
-                elif isdir(full_path):
-                    scan_directory(full_path)
-            
-        while True:
-            self.docs = []
-            scan_directory(SPREADSHEETS_PATH)
-
-            self.__check_removed()
-            self.__check_added()
-            
-            sleep(MONITOR_THREAD_FREQ)
-
-
-class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
-    pass
-
-def run():
-    print('Starting spreadsheet_server...')
+        self.__logging()
+        self.__start_soffice()
+        self.__connect_to_soffice()
+        self.__start_threaded_tcp_server()
+        self.__start_monitor_thread()
     
-    # Set up logging.
-    LOG_FILE = './log/server.log'
-    SOFFICE_LOG = './log/soffice.log'
-    logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s',
-                        datefmt='%Y%m%d %H:%M:%S',
-                        filename=LOG_FILE,
-                        level=logging.DEBUG)
-
-    print('Logging to: ' + LOG_FILE)
-    
-    logging.info('Starting spreadsheet_server.')
-
-    logging.info('Starting the soffice process.')
-    command = '/usr/bin/soffice --accept="pipe,name=' + SOFFICE_PIPE +';urp;"\
-    --norestore --nologo --nodefault --headless'
-    
-    logfile = open(SOFFICE_LOG, "w")
-    subprocess.Popen(command, shell=True, stdout=logfile, stderr=logfile)
-
-    # Make a connection to soffice and fail if it can not connect
-    MAX_ATTEMPTS = 60
-    attempt = 0
-
-    while 1:
-        if attempt > MAX_ATTEMPTS: # soffice process isin't coming up
-            raise RuntimeError("Could not connect to soffice process.")
-
-        try:
-            soffice = pyoo.Desktop(pipe=SOFFICE_PIPE)
-            logging.info("Connected to soffice.")
-            break
-        
-        except OSError:
-            attempt += 1
-            sleep(1)
-
-    # Start server initialisation
-    HOST, PORT = "localhost", 5555
-
-    spreadsheets = {}
-    locks = {} # A lock for each spreadsheet
-    
-    try:
-        server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
-    except OSError:
-        print("Error: The port is in use. Maybe the server is already running?")
-        exit()
-    
-    # create documents for each file in ./spreadsheets
-    files = listdir(SPREADSHEETS_PATH)
-    docs = [f for f in files if isfile(join(SPREADSHEETS_PATH, f))]
-
-    server.spreadsheets = spreadsheets
-    server.locks = locks
-    for doc in docs:
-        if doc[0] == '.' :
-            continue
-        
-        logging.info("Loading " + doc)
-        spreadsheets[doc] = soffice.open_spreadsheet(
-            SPREADSHEETS_PATH + "/" + doc)
-        locks[doc] = threading.Lock()
-
-    # Start the main server thread. This server thread will start a
-    # new thread to handle each client connection.
-    server_thread = threading.Thread(target=server.serve_forever)
-    server_thread.daemon = False # Gracefully stop child threads
-    server_thread.start()
-
-    logging.info("Server thread running. Waiting on connections...")
-
-    # This thread monitors the SPREADSHEETS directory to add or remove
-    # spreadsheets
-    monitor_thread = MonitorThread(spreadsheets, locks, soffice)
-    monitor_thread.daemon = True
-    monitor_thread.start()
-
-    print('Up and listening for connections!')
-
 
 if __name__ == "__main__":
-    run()
+
+    print('Starting spreadsheet_server...')
+
+    spreadsheet_server = SpreadsheetServer()
+    spreadsheet_server.run()
+
+    print('Up and listening for connections!')
