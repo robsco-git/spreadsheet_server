@@ -76,7 +76,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             raise RuntimeError("Received incorrect connection string.")
 
         self.con = SpreadsheetConnection(
-            server.spreadsheets[data[1]], server.locks[data[1]])
+            self.server.spreadsheets[data[1]], self.server.locks[data[1]])
         
         self.__send("OK")
         self.con.lock_spreadsheet()
@@ -145,20 +145,26 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         
 class MonitorThread(threading.Thread):
     """Monitors the spreadsheet directory for changes."""
+
+    def __init__(self, spreadsheets, locks, soffice):
+        self.spreadsheets = spreadsheets
+        self.locks = locks
+        self.soffice = soffice
+        super().__init__()
     
     def __load_spreadsheet(self, doc):
         logging.info("Loading " + doc)
-        server.spreadsheets[doc] = soffice.open_spreadsheet(
+        self.spreadsheets[doc] = self.soffice.open_spreadsheet(
             SPREADSHEETS_PATH + "/" + doc)
-        server.locks[doc] = threading.Lock()
+        self.locks[doc] = threading.Lock()
 
         
     def __unload_spreadsheet(self, doc):
         logging.info("Removing " + doc)
-        server.locks[doc].acquire()
-        server.spreadsheets[doc].close()
-        server.spreadsheets.pop(doc, None)
-        server.locks.pop(doc, None)
+        self.locks[doc].acquire()
+        self.spreadsheets[doc].close()
+        self.spreadsheets.pop(doc, None)
+        self.locks.pop(doc, None)
 
         
     def __check_added(self):
@@ -168,7 +174,7 @@ class MonitorThread(threading.Thread):
             if doc[0] != '.': # Ignore hidden files
                 found = False
 
-                for key, value in server.spreadsheets.items():
+                for key, value in self.spreadsheets.items():
                     if doc == key:
                         found = True
                         break
@@ -183,7 +189,7 @@ class MonitorThread(threading.Thread):
         """
             
         removed_spreadsheets = []
-        for key, value in server.spreadsheets.items():
+        for key, value in self.spreadsheets.items():
             removed = True
             for doc in self.docs:
                 if key == doc:
@@ -228,8 +234,7 @@ class MonitorThread(threading.Thread):
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
 
-
-if __name__ == "__main__":
+def run():
     print('Starting spreadsheet_server...')
     
     # Set up logging.
@@ -254,6 +259,7 @@ if __name__ == "__main__":
     # Make a connection to soffice and fail if it can not connect
     MAX_ATTEMPTS = 60
     attempt = 0
+
     while 1:
         if attempt > MAX_ATTEMPTS: # soffice process isin't coming up
             raise RuntimeError("Could not connect to soffice process.")
@@ -270,6 +276,9 @@ if __name__ == "__main__":
     # Start server initialisation
     HOST, PORT = "localhost", 5555
 
+    spreadsheets = {}
+    locks = {} # A lock for each spreadsheet
+    
     try:
         server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
     except OSError:
@@ -280,16 +289,16 @@ if __name__ == "__main__":
     files = listdir(SPREADSHEETS_PATH)
     docs = [f for f in files if isfile(join(SPREADSHEETS_PATH, f))]
 
-    server.spreadsheets = {}
-    server.locks = {} # A lock for each spreadsheet
+    server.spreadsheets = spreadsheets
+    server.locks = locks
     for doc in docs:
         if doc[0] == '.' :
             continue
         
         logging.info("Loading " + doc)
-        server.spreadsheets[doc] = soffice.open_spreadsheet(
+        spreadsheets[doc] = soffice.open_spreadsheet(
             SPREADSHEETS_PATH + "/" + doc)
-        server.locks[doc] = threading.Lock()
+        locks[doc] = threading.Lock()
 
     # Start the main server thread. This server thread will start a
     # new thread to handle each client connection.
@@ -301,8 +310,12 @@ if __name__ == "__main__":
 
     # This thread monitors the SPREADSHEETS directory to add or remove
     # spreadsheets
-    monitor_thread = MonitorThread()
+    monitor_thread = MonitorThread(spreadsheets, locks, soffice)
     monitor_thread.daemon = True
     monitor_thread.start()
 
     print('Up and listening for connections!')
+
+
+if __name__ == "__main__":
+    run()
