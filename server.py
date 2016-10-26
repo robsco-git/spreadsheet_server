@@ -74,7 +74,7 @@ class SpreadsheetServer:
 
         
         def killall(pids):
-            logging.warn('Killing existing LibreOffice process')
+            logging.warning('Killing existing LibreOffice process')
             for pid in pids:
                 os.kill(pid, SIGTERM)
         

@@ -11,7 +11,6 @@ SPREADSHEETS_PATH = "./spreadsheets"
 class TestMonitor(unittest.TestCase):
     
     def setUp(self):
-        # Create soffice object
         self.spreadsheet_server = SpreadsheetServer()
         self.spreadsheet_server._SpreadsheetServer__start_soffice()
         self.spreadsheet_server._SpreadsheetServer__connect_to_soffice()
@@ -22,7 +21,6 @@ class TestMonitor(unittest.TestCase):
 
 
     def tearDown(self):
-        # Stop monitor thead
         self.spreadsheet_server._SpreadsheetServer__stop_monitor_thread()
         self.spreadsheet_server._SpreadsheetServer__kill_libreoffice()
         self.spreadsheet_server._SpreadsheetServer__close_logfile()

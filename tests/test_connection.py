@@ -21,7 +21,8 @@ class TestConnection(unittest.TestCase):
             SPREADSHEETS_PATH + "/" + TEST_SS)
 
         lock = threading.Lock()
-        self.ss_con = SpreadsheetConnection(self.spreadsheet, lock)
+        self.ss_con = SpreadsheetConnection(self.spreadsheet, lock,
+                                            self.spreadsheet_server.save_path)
 
 
     def tearDown(self):
