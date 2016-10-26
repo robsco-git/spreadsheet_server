@@ -22,7 +22,10 @@ from time import sleep
 from request_handler import ThreadedTCPRequestHandler, ThreadedTCPServer
 from monitor import MonitorThread
 from signal import SIGTERM
+import os
+import fileinput
 
+SOFFICE_BINARY = "soffice.bin"
 LOG_FILE = './log/server.log'
 SOFFICE_LOG = './log/soffice.log'
 SOFFICE_HOST, SOFFICE_PORT = "localhost", 5555
@@ -31,13 +34,13 @@ SPREADSHEETS_PATH = "./spreadsheets"
 MONITOR_FREQ = 5 # In seconds
 
 
-class SpreadsheetServer():
+class SpreadsheetServer:
 
     def __init__(self, log_file=LOG_FILE, soffice_log=SOFFICE_LOG,
                  soffice_host=SOFFICE_HOST, soffice_port=SOFFICE_PORT,
                  soffice_pipe=SOFFICE_PIPE,
                  spreadsheets_path=SPREADSHEETS_PATH,
-                 monitor_frequency=MONITOR_FREQ):
+                 monitor_frequency=MONITOR_FREQ, ask_kill=False):
         
         self.log_file = log_file
         self.soffice_log = soffice_log
@@ -45,6 +48,8 @@ class SpreadsheetServer():
         self.soffice_port = soffice_port
         self.soffice_pipe = soffice_pipe
         self.monitor_frequency = monitor_frequency
+
+        self.ask_kill = ask_kill
         
         self.spreadsheets_path = spreadsheets_path
         self.spreadsheets = {}
@@ -65,6 +70,48 @@ class SpreadsheetServer():
 
     def __start_soffice(self):
 
+        def get_pid(name):
+            return map(int,subprocess.check_output(["pidof",name]).split())
+
+        
+        def killall(pids):
+            logging.warn('Killing existing LibreOffice process')
+            for pid in pids:
+                os.kill(pid, SIGTERM)
+        
+
+        # Check for a already running LibreOffice process
+        try:
+            pids = get_pid(SOFFICE_BINARY)
+
+            if self.ask_kill:
+                ask_str = "LibreOffice is already running. Would you like to kill it? (Y/n): "
+
+                while True:
+
+                    answer = input(ask_str)
+                    answer = answer.lower()
+                    
+                    if answer not in ['y', 'n', '']:
+                        Print("Please respond with 'y' or 'n'.")
+                    else:
+                        break
+
+                if answer in ['y', '']:
+                    killall(pids)
+                else:
+                    print("Goodbye!")
+                    exit()
+                    
+            else:
+                killall(pids)
+                
+        except subprocess.CalledProcessError:
+            # There is no soffice.bin process
+            pass
+
+        # Use which to get the binary location
+        
         logging.info('Starting the soffice process.')
         command = '/usr/bin/soffice --accept="pipe,name=' + self.soffice_pipe +';urp;"\
         --norestore --nologo --nodefault --headless'
@@ -92,6 +139,7 @@ class SpreadsheetServer():
             except OSError:
                 attempt += 1
                 sleep(1)
+
 
     def __start_threaded_tcp_server(self):
         """Set up and start the TCP threaded server to handle incomming 
@@ -147,7 +195,11 @@ class SpreadsheetServer():
     def __stop_threaded_tcp_server(self):
         """Stop the ThreadedTCPServer."""
 
-        self.server.shutdown()
+        try:
+            self.server.shutdown()
+        except AttributeError:
+            # The server was never set up
+            pass
         
 
     def __kill_libreoffice(self):
@@ -175,21 +227,21 @@ class SpreadsheetServer():
         self.__logging()
         self.__start_soffice()
         self.__connect_to_soffice()
-        self.__start_threaded_tcp_server()
         self.__start_monitor_thread()
+        self.__start_threaded_tcp_server()
 
             
 if __name__ == "__main__":
 
     print('Starting spreadsheet_server...')
 
-    spreadsheet_server = SpreadsheetServer()
+    spreadsheet_server = SpreadsheetServer(ask_kill=True)
     try:
         spreadsheet_server.run()
         print('Up and listening for connections!')
         while True: sleep(100)
         
-    except (KeyboardInterrupt, SystemExit):
+    except KeyboardInterrupt:
         print("Shutting down server. Please wait...")
         spreadsheet_server.stop()
         

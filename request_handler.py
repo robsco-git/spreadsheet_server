@@ -20,6 +20,11 @@ from socket import SHUT_RDWR
 import logging
 from connection import SpreadsheetConnection
 
+
+class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    pass
+
+
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
     
     def __send(self, msg):
@@ -133,5 +138,3 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         self.__close_connection()
 
         
-class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
-    pass
