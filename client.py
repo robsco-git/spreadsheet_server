@@ -22,8 +22,10 @@ import sys
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
 
+IP, PORT = "localhost", 5555
+
 class SpreadsheetClient:
-    def __init__(self, ip, port, spreadsheet):
+    def __init__(self, spreadsheet, ip=IP, port=PORT):
         if not PY2 and not PY3:
             raise RuntimeError("Python version not supported.")
         

@@ -22,7 +22,7 @@ if __name__ == "__main__":
     
     EXAMPLE_SPREADSHEET = "example.ods"
     SHEET_NAME = "Sheet1"
-    sc = SpreadsheetClient("localhost", 5555, EXAMPLE_SPREADSHEET)
+    sc = SpreadsheetClient(EXAMPLE_SPREADSHEET)
     
     # Get sheet names
     sheet_names = sc.get_sheet_names()
