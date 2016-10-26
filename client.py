@@ -46,12 +46,11 @@ class SpreadsheetClient:
     def __set_spreadsheet(self, spreadsheet):
         self.__send(["SPREADSHEET", spreadsheet])
         received = self.__receive()
-        if received == "NOT FOUND":
+
+        if received == "NOT FOUND" or received != "OK":
+            self.disconnect()
             raise RuntimeError("The requested spreadsheet was not found.")
         
-        elif received != "OK":
-            raise RuntimeError("Could not set the spreadsheet.")
-
 
     def set_cells(self, sheet, cell_ref, data):
         """Set the value(s) for a single cell or a cell range.

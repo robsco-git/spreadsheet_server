@@ -23,9 +23,10 @@ class SpreadsheetConnection:
     """Handles connections to the spreadsheets opened by soffice (LibreOffice).
     """
     
-    def __init__(self, spreadsheet, lock):
+    def __init__(self, spreadsheet, lock, save_path):
         self.spreadsheet = spreadsheet
         self.lock = lock
+        self.save_path = save_path
 
 
     def lock_spreadsheet(self):
@@ -301,11 +302,9 @@ class SpreadsheetConnection:
         'filename' is the name of the file.
         """
 
-        SAVE_PATH = "./saved_spreadsheets/"
-
         if self.lock.locked():
             filename = secure_filename(filename)
-            self.spreadsheet.save(SAVE_PATH + filename)
+            self.spreadsheet.save(self.save_path + filename)
             return True
         else:
             return False

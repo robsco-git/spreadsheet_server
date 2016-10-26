@@ -32,7 +32,7 @@ SOFFICE_HOST, SOFFICE_PORT = "localhost", 5555
 SOFFICE_PIPE = "soffice_headless"
 SPREADSHEETS_PATH = "./spreadsheets"
 MONITOR_FREQ = 5 # In seconds
-
+SAVE_PATH = "./saved_spreadsheets/"
 
 class SpreadsheetServer:
 
@@ -40,7 +40,8 @@ class SpreadsheetServer:
                  soffice_host=SOFFICE_HOST, soffice_port=SOFFICE_PORT,
                  soffice_pipe=SOFFICE_PIPE,
                  spreadsheets_path=SPREADSHEETS_PATH,
-                 monitor_frequency=MONITOR_FREQ, ask_kill=False):
+                 monitor_frequency=MONITOR_FREQ, ask_kill=False,
+                 save_path=SAVE_PATH):
         
         self.log_file = log_file
         self.soffice_log = soffice_log
@@ -50,6 +51,7 @@ class SpreadsheetServer:
         self.monitor_frequency = monitor_frequency
 
         self.ask_kill = ask_kill
+        self.save_path = save_path
         
         self.spreadsheets_path = spreadsheets_path
         self.spreadsheets = {}
@@ -63,9 +65,6 @@ class SpreadsheetServer:
                             datefmt='%Y%m%d %H:%M:%S',
                             filename=self.log_file,
                             level=logging.INFO)
-
-        print('Logging to: ' + self.log_file)
-
 
 
     def __start_soffice(self):
@@ -140,7 +139,12 @@ class SpreadsheetServer:
                 attempt += 1
                 sleep(1)
 
+            except IOError:
+                print("IOError in connection to soffice")
+                attempt += 1
+                sleep(1)
 
+                
     def __start_threaded_tcp_server(self):
         """Set up and start the TCP threaded server to handle incomming 
         requests.
@@ -149,7 +153,7 @@ class SpreadsheetServer:
         logging.info('Starting spreadsheet_server.')
         
         try:
-            self.server = ThreadedTCPServer(
+            self.server = ThreadedTCPServer(self.save_path,
                 (self.soffice_host, self.soffice_port),
                 ThreadedTCPRequestHandler
             )
@@ -238,6 +242,7 @@ if __name__ == "__main__":
 
     spreadsheet_server = SpreadsheetServer(ask_kill=True)
     try:
+        print('Logging to: ' + spreadsheet_server.log_file)
         spreadsheet_server.run()
         print('Up and listening for connections!')
         while True: sleep(100)

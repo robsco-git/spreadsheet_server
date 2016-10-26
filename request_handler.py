@@ -22,7 +22,10 @@ from connection import SpreadsheetConnection
 from time import sleep
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
-    pass
+
+    def __init__(self, save_path, *args, **kwargs):
+        self.save_path = save_path
+        socketserver.TCPServer.__init__(self, *args, **kwargs)
 
 
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
@@ -73,18 +76,20 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         # If there is a KeyError when looking up the spreadsheets name, wait
         # a bit and try again
 
-        MAX_ATTEMPTS = 60
+        MAX_ATTEMPTS = 10
         attempt = 0
         
         while 1:
-            if attempt > MAX_ATTEMPTS: # soffice process isin't coming up
+            if attempt == MAX_ATTEMPTS: # soffice process isin't coming up
                 # We can assume the spreadsheet does not exist
                 self.__send("NOT FOUND")
+                break
 
             try:
                 self.con = SpreadsheetConnection(
                     self.server.spreadsheets[data[1]],
-                    self.server.locks[data[1]]
+                    self.server.locks[data[1]],
+                    self.server.save_path
                 )
                 break
                 
@@ -93,10 +98,11 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
             attempt += 1
             sleep(1)
-        
-        
-        self.__send("OK")
-        self.con.lock_spreadsheet()
+
+        # If the spreadsheet was sucessfully connected to
+        if attempt != MAX_ATTEMPTS:
+            self.__send("OK")
+            self.con.lock_spreadsheet()
 
 
     def __close_connection(self):
@@ -105,7 +111,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         try:
             if self.con.lock.locked:
                 self.con.unlock_spreadsheet()
-        except UnboundLocalError:
+        except (UnboundLocalError, AttributeError):
             # con was never created.
             pass
             
