@@ -135,8 +135,4 @@ class MonitorThread(threading.Thread):
 
             self.done_scan = True
 
-            spreadsheet_names = [
-                key for key, value in self.spreadsheets.items()
-            ]
-            
             sleep(self.monitor_frequency)
