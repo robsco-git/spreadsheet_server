@@ -19,7 +19,7 @@ import json
 from socket import SHUT_RDWR
 import logging
 from connection import SpreadsheetConnection
-
+from time import sleep
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
@@ -70,8 +70,30 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         if (data[0] != "SPREADSHEET"):
             raise RuntimeError("Received incorrect connection string.")
 
-        self.con = SpreadsheetConnection(
-            self.server.spreadsheets[data[1]], self.server.locks[data[1]])
+        # If there is a KeyError when looking up the spreadsheets name, wait
+        # a bit and try again
+
+        MAX_ATTEMPTS = 60
+        attempt = 0
+        
+        while 1:
+            if attempt > MAX_ATTEMPTS: # soffice process isin't coming up
+                # We can assume the spreadsheet does not exist
+                self.__send("NOT FOUND")
+
+            try:
+                self.con = SpreadsheetConnection(
+                    self.server.spreadsheets[data[1]],
+                    self.server.locks[data[1]]
+                )
+                break
+                
+            except KeyError:
+                pass
+
+            attempt += 1
+            sleep(1)
+        
         
         self.__send("OK")
         self.con.lock_spreadsheet()

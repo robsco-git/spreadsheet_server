@@ -45,7 +45,11 @@ class SpreadsheetClient:
     
     def __set_spreadsheet(self, spreadsheet):
         self.__send(["SPREADSHEET", spreadsheet])
-        if self.__receive() != "OK":
+        received = self.__receive()
+        if received == "NOT FOUND":
+            raise RuntimeError("The requested spreadsheet was not found.")
+        
+        elif received != "OK":
             raise RuntimeError("Could not set the spreadsheet.")
 
 
