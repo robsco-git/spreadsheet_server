@@ -16,7 +16,7 @@
 
 import threading
 from os import listdir
-from os.path import isfile, isdir, join
+from os.path import isfile, isdir, join, exists
 import logging
 from time import sleep
 
@@ -34,6 +34,8 @@ class MonitorThread(threading.Thread):
         self.spreadsheets_path = spreadsheets_path
         self.monitor_frequency = monitor_frequency
 
+        self.done_scan = False # Done an initial scan or not
+
         super().__init__()
      
 
@@ -44,6 +46,10 @@ class MonitorThread(threading.Thread):
     def stopped(self):
         return self._stop_thread.isSet()
 
+
+    def initial_scan(self):
+        return self.done_scan
+    
         
     def __load_spreadsheet(self, doc):
         logging.info("Loading " + doc)
@@ -62,7 +68,7 @@ class MonitorThread(threading.Thread):
         
     def __check_added(self):
         """Check for new spreadsheets and loads them into LibreOffice."""
-                    
+
         for doc in self.docs:
             if doc[0] != '.': # Ignore hidden files
                 found = False
@@ -94,33 +100,43 @@ class MonitorThread(threading.Thread):
         for doc in removed_spreadsheets:
             self.__unload_spreadsheet(doc)
 
-    
-    def run(self):
-        def scan_directory(d):
-            """Recursively scan a directory for spreadsheets."""
-            dir_contents = listdir(d)
-            
-            for f in dir_contents:
 
-                # Ignore particular files
-                if f[:7] == ".~lock." or f == ".gitignore":
-                    continue
+    def __scan_directory(self, d):
+        """Recursively scan a directory for spreadsheets."""
+
+        dir_contents = listdir(d)
+
+        for f in dir_contents:
+
+            # Ignore particular files
+            if f[:7] == ".~lock." or f == ".gitignore":
+                continue
+
+            full_path = join(d, f)
+            if isfile(full_path):
+
+                # Remove self.spreadsheets_path from the path
+                relative_path = full_path.split(
+                    self.spreadsheets_path)[1][1:]
+
+                self.docs.append(relative_path)
+            elif isdir(full_path):
+                self.__scan_directory(full_path)
+
                 
-                full_path = join(d, f)
-                if isfile(full_path):
-                    # Remove self.spreadsheets_path from the path
-                    relative_path = full_path.split(
-                        self.spreadsheets_path)[1][1:]
-                    
-                    self.docs.append(relative_path)
-                elif isdir(full_path):
-                    scan_directory(full_path)
-
+    def run(self):
         while not self.stopped():
             self.docs = []
-            scan_directory(self.spreadsheets_path)
+
+            self.__scan_directory(self.spreadsheets_path)
 
             self.__check_removed()
             self.__check_added()
+
+            self.done_scan = True
+
+            spreadsheet_names = [
+                key for key, value in self.spreadsheets.items()
+            ]
             
             sleep(self.monitor_frequency)
