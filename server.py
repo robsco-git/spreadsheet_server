@@ -196,6 +196,7 @@ class SpreadsheetServer:
         """Stop the ThreadedTCPServer."""
 
         try:
+            self.server.server_close()
             self.server.shutdown()
         except AttributeError:
             # The server was never set up
@@ -213,7 +214,7 @@ class SpreadsheetServer:
         
         self.logfile.close()
         
-        
+
     def stop(self):
         """Stop all the threads and shutdown LibreOffice."""
 
