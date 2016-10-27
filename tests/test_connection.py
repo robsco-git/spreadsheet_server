@@ -183,6 +183,18 @@ class TestConnection(unittest.TestCase):
         self.assertTrue(status)
 
 
+    def test_invalid_sheet_name(self):
+        self.ss_con.lock_spreadsheet()
+        status = False
+        try:
+            self.ss_con.set_cells("1Sheet1", "A1", 1)
+        except ValueError:
+            status = True
+        self.ss_con.unlock_spreadsheet()
+
+        self.assertTrue(status)
+        
+
     def test_set_single_cell(self):
         self.ss_con.lock_spreadsheet()
         self.ss_con.set_cells("Sheet1", "A1", 1)

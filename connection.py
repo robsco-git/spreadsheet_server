@@ -178,6 +178,8 @@ class SpreadsheetConnection:
         'value' is a single string, int or float value.
         """
 
+        self.__validate_sheet_name(sheet)
+        
         self.__check_single_cell(cell_ref)
         
         self.__check_for_lock()
@@ -205,6 +207,8 @@ class SpreadsheetConnection:
         requires 'data' of the format:
         [[A1, B1, C1], [A2, B2, C2], [A3, B3, C3]].
         """
+
+        self.__validate_sheet_name(sheet)
 
         self.__check_for_lock()
         
@@ -237,7 +241,25 @@ class SpreadsheetConnection:
     def get_sheet_names(self):
         """Returns a list of all sheet names in the workbook."""
         return [s.name for s in self.spreadsheet.sheets]
+
+
+    def __validate_sheet_name(self, sheet):
+        """Don't want to send an invalid sheet to pyoo."""
         
+        sheet_names = self.get_sheet_names()
+        if type(sheet) is int:
+
+            if sheet < 0 or sheet > len(sheet_names) -1:
+                raise ValueError("Sheet name is invalid.")
+            
+        elif type(sheet) is str:
+
+            if sheet not in sheet_names:
+                raise ValueError("Sheet name is invalid.")
+            
+        else:
+            raise ValueError("Sheet name is invalid.")
+    
             
     def get_cells(self, sheet, cell_ref):
         """Gets the value(s) of a single cell or a cell range. This can be used
@@ -245,7 +267,7 @@ class SpreadsheetConnection:
 
         See 'get_cell' and 'get_cell_range' for more information.
         """
-
+        
         if self.__is_single_cell(cell_ref):
             return self.get_cell(sheet, cell_ref)
         else:
@@ -260,6 +282,8 @@ class SpreadsheetConnection:
 
         A single cell value is returned.
         """
+
+        self.__validate_sheet_name(sheet)
 
         self.__check_single_cell(cell_ref)
         
@@ -278,6 +302,8 @@ class SpreadsheetConnection:
         A list of cell values is returned for a one dimensional range of cells.
         A list of lists is returned for a two dimensional range of cells.
         """
+
+        self.__validate_sheet_name(sheet)
 
         r = self.__cell_range_to_index(cell_ref)
         sheet = self.spreadsheet.sheets[sheet]
