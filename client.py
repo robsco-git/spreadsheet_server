@@ -108,7 +108,8 @@ class SpreadsheetClient:
 
     
     def save_spreadsheet(self, filename):
-        """Save the spreadsheet in its current state on the server. The server         determines where it is saved."""
+        """Save the spreadsheet in its current state on the server. The 
+        server determines where it is saved."""
         
         self.__send(["SAVE", filename])
         return self.__receive()
