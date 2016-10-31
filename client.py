@@ -25,6 +25,7 @@ PY3 = sys.version_info[0] == 3
 IP, PORT = "localhost", 5555
 
 class SpreadsheetClient:
+
     def __init__(self, spreadsheet, ip=IP, port=PORT):
         if not PY2 and not PY3:
             raise RuntimeError("Python version not supported.")
@@ -75,11 +76,12 @@ class SpreadsheetClient:
 
     def get_sheet_names(self):
         """Returns a list of all sheet names in the workbook."""
+        
         self.__send(["GET_SHEETS"])
         sheet_names = self.__receive()
 
         if sheet_names == "ERROR":
-            raise Exception("Could not get sheet names")
+            raise Exception("Could not retrieve sheet names.")
         
         return sheet_names
         
@@ -106,7 +108,7 @@ class SpreadsheetClient:
 
     
     def save_spreadsheet(self, filename):
-        """Save the spreadsheet in its current state on the server."""
+        """Save the spreadsheet in its current state on the server. The server         determines where it is saved."""
         
         self.__send(["SAVE", filename])
         return self.__receive()
@@ -129,8 +131,8 @@ class SpreadsheetClient:
 
             
     def __receive(self):
-        """Receive a message from the client, onvert the received utf-8 bytes 
-        into a string then decode if from json."""
+        """Receive a message from the client, convert the received utf-8 
+        bytes into a string then decode if from json."""
         
         recv = self.sock.recv(4096)
         if recv == b'':
