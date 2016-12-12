@@ -19,6 +19,8 @@ spreadsheets are supported.
 * A given spreadsheet is locked (within python, not on disk) when it is accessed
 to prevent state irregularities across multiple concurrent connections to the
 same spreadsheet.
+* By default, when a spreadsheet file changes on disk, it will be closed and
+  opened in LibreOffice.
 * Spreadsheets can be saved - useful for debugging purposes.
 
 -----
@@ -29,6 +31,11 @@ Place your spreadsheets in './spreadsheets'.
 Make sure you have a correctly set up virtualenv and required packages installed
 (see below), then run the server:
 python server.py
+
+You can also create a SpreadsheetServer object (from server.py) and then call
+the method 'run' on the object to start the server. This allows for
+customisation of the default settings. Have a look in server.py to see what can
+be set.
 
 Have a look at the example_client.py for an overview of how to use the functions
 exposed by client.py.

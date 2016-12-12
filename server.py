@@ -24,11 +24,13 @@ from monitor import MonitorThread
 from signal import SIGTERM
 import os
 import fileinput
+import sys
+
 
 SOFFICE_BINARY = "soffice.bin"
 LOG_FILE = './log/server.log'
 SOFFICE_LOG = './log/soffice.log'
-SOFFICE_HOST, SOFFICE_PORT = "localhost", 5555
+HOST, PORT = "localhost", 5555
 SOFFICE_PIPE = "soffice_headless"
 SPREADSHEETS_PATH = "./spreadsheets"
 MONITOR_FREQ = 5 # In seconds
@@ -37,25 +39,46 @@ SAVE_PATH = "./saved_spreadsheets/"
 class SpreadsheetServer:
 
     def __init__(self, log_file=LOG_FILE, soffice_log=SOFFICE_LOG,
-                 soffice_host=SOFFICE_HOST, soffice_port=SOFFICE_PORT,
+                 host=HOST, port=PORT,
                  soffice_pipe=SOFFICE_PIPE,
                  spreadsheets_path=SPREADSHEETS_PATH,
-                 monitor_frequency=MONITOR_FREQ, ask_kill=False,
+                 monitor_frequency=MONITOR_FREQ,
+                 reload_on_disk_change=True,
+                 ask_kill=False,
                  save_path=SAVE_PATH):
         
-        self.log_file = log_file
+        self.log_file = log_file # Where 'logging' logs to
+
+        # Where the output from LibreOffice is logged to
         self.soffice_log = soffice_log
-        self.soffice_host = soffice_host
-        self.soffice_port = soffice_port
+
+        self.host = host # The address on which the server is listening
+        self.port = port # The port on which the server is listening
+
+        # The name of the pipe set up by LibreOffice that pyoo will connect to.
         self.soffice_pipe = soffice_pipe
+
+        # The frequency, in seconds, at which the directory containing the
+        # spreadsheets is polled.
         self.monitor_frequency = monitor_frequency
 
+        # Weather or not to close and open a spreadsheet with the file changes on
+        # disk
+        self.reload_on_disk_change = reload_on_disk_change
+
+        # Whether or not to interactively ask the user if they want to kill an
+        # existing LibreOffice process. 
         self.ask_kill = ask_kill
+
+        # Where to save the spreadsheets when requested by the client.
         self.save_path = save_path
-        
+
+        # Where to look for spreadsheets to load.
         self.spreadsheets_path = spreadsheets_path
-        self.spreadsheets = {}
-        self.locks = {} # A lock for each spreadsheet
+
+        self.spreadsheets = {} # Each pyoo spreadsheet object.
+        self.locks = {} # A lock for each spreadsheet.
+        self.hashes = {} # A hash of the file contents for each spreadsheet.
 
         
     def __logging(self):
@@ -144,6 +167,11 @@ class SpreadsheetServer:
                 attempt += 1
                 sleep(1)
 
+            except Exception as e:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                print(exc_type, fname, exc_tb.tb_lineno)
+                
                 
     def __start_threaded_tcp_server(self):
         """Set up and start the TCP threaded server to handle incomming 
@@ -154,7 +182,7 @@ class SpreadsheetServer:
         
         try:
             self.server = ThreadedTCPServer(self.save_path,
-                (self.soffice_host, self.soffice_port),
+                (self.host, self.port),
                 ThreadedTCPRequestHandler
             )
             
@@ -165,6 +193,7 @@ class SpreadsheetServer:
 
         self.server.spreadsheets = self.spreadsheets
         self.server.locks = self.locks
+        self.server.hashes = self.hashes
 
         # Start the main server thread. This server thread will start a
         # new thread to handle each client connection.
@@ -182,9 +211,11 @@ class SpreadsheetServer:
         """This thread monitors the SPREADSHEETS directory to add or remove.
         """
         
-        self.monitor_thread = MonitorThread(self.spreadsheets, self.locks,
-                                       self.soffice, self.spreadsheets_path,
-                                       self.monitor_frequency)
+        self.monitor_thread = MonitorThread(
+            self.spreadsheets, self.locks, self.hashes, self.soffice,
+            self.spreadsheets_path, self.monitor_frequency,
+            self.reload_on_disk_change)
+        
         self.monitor_thread.daemon = True
         self.monitor_thread.start()
 

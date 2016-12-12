@@ -19,20 +19,23 @@ from os import listdir
 from os.path import isfile, isdir, join, exists
 import logging
 from time import sleep
+import hashlib
 
 class MonitorThread(threading.Thread):
     """Monitors the spreadsheet directory for changes."""
 
-    def __init__(self, spreadsheets, locks, soffice, spreadsheets_path,
-                 monitor_frequency):
+    def __init__(self, spreadsheets, locks, hashes, soffice, spreadsheets_path,
+                 monitor_frequency, reload_on_disk_change):
         
         self._stop_thread = threading.Event()
 
         self.spreadsheets = spreadsheets
         self.locks = locks
+        self.hashes = hashes
         self.soffice = soffice
         self.spreadsheets_path = spreadsheets_path
         self.monitor_frequency = monitor_frequency
+        self.reload_on_disk_change = reload_on_disk_change
 
         self.done_scan = False # Done an initial scan or not
 
@@ -49,36 +52,54 @@ class MonitorThread(threading.Thread):
 
     def initial_scan(self):
         return self.done_scan
-    
-        
-    def __load_spreadsheet(self, doc):
-        logging.info("Loading " + doc)
-        self.spreadsheets[doc] = self.soffice.open_spreadsheet(
-            self.spreadsheets_path + "/" + doc)
-        self.locks[doc] = threading.Lock()
+
+
+    def __get_full_path(self, doc):
+        return join(self.spreadsheets_path, doc)
 
         
-    def __unload_spreadsheet(self, doc):
-        logging.info("Removing " + doc)
-        self.locks[doc].acquire()
-        self.spreadsheets[doc].close()
-        self.spreadsheets.pop(doc, None)
-        self.locks.pop(doc, None)
+    def __load_spreadsheet(self, doc):
+        logging.info("Loading " + doc["path"])
+
+        self.spreadsheets[doc["path"]] = self.soffice.open_spreadsheet(
+            self.__get_full_path(doc["path"])
+        )
+        self.locks[doc["path"]] = threading.Lock()
+        self.hashes[doc["path"]] = doc["hash"]
+
+        
+    def __unload_spreadsheet(self, doc_path):
+        logging.info("Removing " + doc_path)
+        self.locks[doc_path].acquire()
+        self.spreadsheets[doc_path].close()
+        self.spreadsheets.pop(doc_path, None)
+        self.locks.pop(doc_path, None)
+        self.hashes.pop(doc_path, None)
 
         
     def __check_added(self):
         """Check for new spreadsheets and loads them into LibreOffice."""
 
         for doc in self.docs:
-            if doc[0] != '.': # Ignore hidden files
-                found = False
+            if doc["path"][0] != '.': # Ignore hidden files
+                load = True # Default to loading the spreadsheet
 
                 for key, value in self.spreadsheets.items():
-                    if doc == key:
-                        found = True
+                    if doc["path"] == key:
+
+                        # Check if the file has been modified
+                        # Does the file now have a differnet hash?
+
+                        if (self.reload_on_disk_change
+                            and doc["hash"] != self.hashes[doc["path"]]):
+                            
+                            self.__unload_spreadsheet(doc["path"])
+                        else:
+                            load = False
+                            
                         break
 
-                if found == False:
+                if load:
                     self.__load_spreadsheet(doc)
 
                     
@@ -91,14 +112,14 @@ class MonitorThread(threading.Thread):
         for key, value in self.spreadsheets.items():
             removed = True
             for doc in self.docs:
-                if key == doc:
+                if key == doc["path"]:
                     removed = False
                     break
             if removed:
                 removed_spreadsheets.append(key)
 
-        for doc in removed_spreadsheets:
-            self.__unload_spreadsheet(doc)
+        for doc_path in removed_spreadsheets:
+            self.__unload_spreadsheet(doc_path)
 
 
     def __scan_directory(self, d):
@@ -119,7 +140,14 @@ class MonitorThread(threading.Thread):
                 relative_path = full_path.split(
                     self.spreadsheets_path)[1][1:]
 
-                self.docs.append(relative_path)
+                # Calculate the MD5 hash for the file
+                hasher = hashlib.md5()
+                with open(self.__get_full_path(relative_path), 'rb') as afile:
+                    buf = afile.read()
+                    hasher.update(buf)
+                    h = hasher.hexdigest()
+                
+                self.docs.append({"path": relative_path, "hash": h})
             elif isdir(full_path):
                 self.__scan_directory(full_path)
 
@@ -134,5 +162,5 @@ class MonitorThread(threading.Thread):
             self.__check_added()
 
             self.done_scan = True
-
+            
             sleep(self.monitor_frequency)

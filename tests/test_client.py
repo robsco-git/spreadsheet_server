@@ -67,6 +67,8 @@ class TestMonitor(unittest.TestCase):
 
         saved_path = dir_path + '/../saved_spreadsheets/' + filename
         self.assertTrue(os.path.exists(saved_path))
+
+        os.remove(saved_path)
         
 
 if __name__ == '__main__':

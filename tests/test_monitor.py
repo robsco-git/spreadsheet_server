@@ -1,12 +1,15 @@
 import unittest
-from .context import MonitorThread, SpreadsheetServer
+from .context import MonitorThread, SpreadsheetServer, SpreadsheetClient
 from time import sleep
 import os
+import shutil
 
 TEST_SS = "example.ods"
 TEST_SS_MOVED = "example_moved.ods"
 SOFFICE_PIPE = "soffice_headless"
 SPREADSHEETS_PATH = "./spreadsheets"
+SAVED_SPREADSHEETS_PATH = "./saved_spreadsheets"
+SHEET_NAME = "Sheet1"
 
 class TestMonitor(unittest.TestCase):
     
@@ -17,7 +20,7 @@ class TestMonitor(unittest.TestCase):
         self.spreadsheet_server._SpreadsheetServer__start_monitor_thread()
         self.monitor_thread = self.spreadsheet_server.monitor_thread
         while not self.monitor_thread.initial_scan():
-            sleep(1)
+            sleep(0.5)
 
 
     def tearDown(self):
@@ -84,6 +87,48 @@ class TestMonitor(unittest.TestCase):
 
         # Move it back to where it was
         os.rename(moved_loc, current_loc)
+
+
+    def test_change_file_hash(self):
+        # Save the example file with a modification
+
+        current_loc = SPREADSHEETS_PATH + '/' + TEST_SS
+        moved_loc = SPREADSHEETS_PATH + '/' + TEST_SS_MOVED
+        shutil.copyfile(current_loc, moved_loc)
+
+        self.spreadsheet_server._SpreadsheetServer__start_threaded_tcp_server()
+        
+        self.sc = SpreadsheetClient(TEST_SS_MOVED)
+        self.sc.set_cells(SHEET_NAME, "A1", 5)
+        self.sc.save_spreadsheet(TEST_SS_MOVED)
+        self.sc.disconnect()
+
+        current_loc = SAVED_SPREADSHEETS_PATH + '/' + TEST_SS_MOVED
+        moved_loc = SPREADSHEETS_PATH + '/' + TEST_SS_MOVED
+
+        hash_before = self.monitor_thread.hashes[TEST_SS_MOVED]
+
+        os.rename(current_loc, moved_loc)
+
+        # Run a scan manually
+        self.monitor_thread.docs = []
+        self.monitor_thread._MonitorThread__scan_directory(SPREADSHEETS_PATH)
+        self.monitor_thread._MonitorThread__check_removed()
+        self.monitor_thread._MonitorThread__check_added()
+
+        hash_after = self.monitor_thread.hashes[TEST_SS_MOVED]
+        self.assertNotEqual(hash_before, hash_after)
+        
+        self.sc = SpreadsheetClient(TEST_SS_MOVED)
+        cell = self.sc.get_cells(SHEET_NAME, "A1")
+        self.sc.save_spreadsheet(TEST_SS_MOVED)
+        self.sc.disconnect()
+
+        self.assertEqual(cell, 5)
+
+        self.spreadsheet_server._SpreadsheetServer__stop_threaded_tcp_server()
+        os.remove(moved_loc)
+        
         
 if __name__ == '__main__':
     unittest.main()
