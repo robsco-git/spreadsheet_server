@@ -8,7 +8,7 @@ SOFFICE_PIPE = "soffice_headless"
 SPREADSHEETS_PATH = "./spreadsheets"
 SHEET_NAME = "Sheet1"
 
-class TestMonitor(unittest.TestCase):
+class TestClient(unittest.TestCase):
     
     def setUp(self):
         self.server = SpreadsheetServer()
@@ -20,7 +20,14 @@ class TestMonitor(unittest.TestCase):
     def tearDown(self):
         self.sc.disconnect()
         self.server.stop()
-        
+
+
+    def test_connect_invalid_spreadsheet(self):
+        try:
+            sc_invalid = SpreadsheetClient(TEST_SS + 'z')
+        except RuntimeError as e:
+            self.assertEqual(str(e), "The requested spreadsheet was not found.")
+
 
     def test_get_sheet_names(self):
         sheet_names = self.sc.get_sheet_names()
@@ -33,10 +40,24 @@ class TestMonitor(unittest.TestCase):
         self.assertEqual(a1, 5)
 
 
+    def test_set_cell_invalid_sheet(self):
+        try:
+            self.sc.set_cells(SHEET_NAME + 'z', "A1", 5)
+        except RuntimeError as e:
+            self.assertEqual(str(e), "Sheet name is invalid.")
+
+
     def test_get_cell(self):
         cell_value = self.sc.get_cells(SHEET_NAME, "C3")
         self.assertEqual(cell_value, 6)
 
+
+    def test_get_cell_invalid_sheet(self):
+        try:
+            cell_value = self.sc.get_cells(SHEET_NAME + 'z', "C3")
+        except RuntimeError as e:
+            self.assertEqual(str(e), "Sheet name is invalid.")
+        
 
     def test_set_cell_row(self):
         cell_values = [4, 5, 6]

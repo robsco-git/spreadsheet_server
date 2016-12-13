@@ -70,9 +70,11 @@ class SpreadsheetClient:
         
         self.__send(["SET", sheet, cell_ref, data])
 
-        if self.__receive() != "OK":
-            raise Exception("Could not set cell(s): '" + cell_ref + "'.")
-
+        received = self.__receive()
+        if type(received) == dict:
+            # The server is retuning an error
+            raise RuntimeError(received["ERROR"])
+            
 
     def get_sheet_names(self):
         """Returns a list of all sheet names in the workbook."""
@@ -85,6 +87,7 @@ class SpreadsheetClient:
         
         return sheet_names
         
+
     def get_cells(self, sheet, cell_ref):
         """Get the value of a single cell or a cell range from the server 
         and return it or them.
@@ -101,9 +104,10 @@ class SpreadsheetClient:
         self.__send(["GET", sheet, cell_ref])
         cells = self.__receive()
 
-        if cells == "ERROR":
-            raise Exception("Could not get cell(s): '" + cell_ref + "'.")
-        
+        if type(cells) == dict:
+            # The server is retuning an error
+            raise RuntimeError(cells["ERROR"])
+
         return cells
 
     

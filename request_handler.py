@@ -98,7 +98,6 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         while 1:
             if attempt >= max_attempts: # soffice process isin't coming up
                 # We can assume the spreadsheet does not exist
-                self.logging.error("Spreadsheet " + data[1] + " was not found.")
                 self.__send("NOT FOUND")
                 self.__close_connection()
                 return False
@@ -152,23 +151,24 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 break
             
             elif data[0] == "SET":
-                self.con.set_cells(data[1], data[2], data[3])
-                self.__send("OK")
+                try:
+                    self.con.set_cells(data[1], data[2], data[3])
+                except ValueError as e:
+                    self.__send({"ERROR": str(e)})
+                else:
+                    self.__send("OK")
                 
             elif data[0] == "GET":
-                cells = self.con.get_cells(data[1], data[2])
-
-                if cells != False:
-                    self.__send(cells)
+                try:
+                    cells = self.con.get_cells(data[1], data[2])
+                except ValueError as e:
+                    self.__send({"ERROR": str(e)})
                 else:
-                    self.__send("ERROR")
+                    self.__send(cells)
 
             elif data[0] == "GET_SHEETS":
                 sheet_names = self.con.get_sheet_names()
-                if sheet_names != False:
-                    self.__send(sheet_names)
-                else:
-                    self.__send("ERROR")
+                self.__send(sheet_names)
                     
             elif data[0] == "SAVE":
                 self.con.save_spreadsheet(data[1])
