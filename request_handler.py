@@ -68,22 +68,40 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         """Handle first request to server and check that it adheres to the
         protocol.
         """
+
+        def protocol_error():
+            # Invalid connection protocol
+            self.logging.error(
+                "Client attempted to connect using and invalid protocol."
+            )
+            self.__send("PROTOCOL ERROR")
+            self.__close_connection()
+            return False
         
         data = self.__receive()
-        if (data[0] != "SPREADSHEET"):
-            raise RuntimeError("Received incorrect connection string.")
 
+        if type(data) != list:
+            return protocol_error()
+
+        if len(data) != 2:
+            return protocol_error()
+        
+        if (data[0] != "SPREADSHEET"):
+            return protocol_error()
+        
         # If there is a KeyError when looking up the spreadsheets name, wait
         # a bit and try again
 
-        MAX_ATTEMPTS = 10
+        max_attempts = self.server.monitor_frequency + 1
         attempt = 0
         
         while 1:
-            if attempt == MAX_ATTEMPTS: # soffice process isin't coming up
+            if attempt >= max_attempts: # soffice process isin't coming up
                 # We can assume the spreadsheet does not exist
+                self.logging.error("Spreadsheet " + data[1] + " was not found.")
                 self.__send("NOT FOUND")
-                break
+                self.__close_connection()
+                return False
 
             try:
                 self.con = SpreadsheetConnection(
@@ -100,9 +118,10 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             sleep(1)
 
         # If the spreadsheet was sucessfully connected to
-        if attempt != MAX_ATTEMPTS:
+        if attempt != max_attempts:
             self.__send("OK")
             self.con.lock_spreadsheet()
+            return True
 
 
     def __close_connection(self):
@@ -161,8 +180,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         close the connection.
         """
 
-        self.__make_connection()
-        self.__main_loop()
-        self.__close_connection()
+        if self.__make_connection():
+            self.__main_loop()
+            self.__close_connection()
 
-        

@@ -187,6 +187,8 @@ class SpreadsheetServer:
             )
             
         except OSError:
+            import traceback
+            traceback.print_exc()
             print("Error: The port is in use. Maybe the server is already running?")
             exit()
 
@@ -194,6 +196,7 @@ class SpreadsheetServer:
         self.server.spreadsheets = self.spreadsheets
         self.server.locks = self.locks
         self.server.hashes = self.hashes
+        self.server.monitor_frequency = self.monitor_frequency
 
         # Start the main server thread. This server thread will start a
         # new thread to handle each client connection.
