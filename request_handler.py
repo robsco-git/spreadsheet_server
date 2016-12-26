@@ -21,6 +21,7 @@ import logging
 from connection import SpreadsheetConnection
 from time import sleep
 
+
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
     def __init__(self, save_path, *args, **kwargs):
@@ -97,6 +98,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         
         while 1:
             if attempt >= max_attempts: # soffice process isin't coming up
+                logging.debug("Waited too long for spreadsheet")
                 # We can assume the spreadsheet does not exist
                 self.__send("NOT FOUND")
                 self.__close_connection()
@@ -114,6 +116,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 pass
 
             attempt += 1
+            logging.debug("Waiting for spreadsheet")
             sleep(1)
 
         # If the spreadsheet was sucessfully connected to
@@ -139,13 +142,14 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             # The client has already disconnected.
             pass
 
+        logging.debug("Closing socket for ThreadedTCPRequestHandler")
         self.request.close()
 
 
     def __main_loop(self):
         while True:
             data = self.__receive()
-            
+
             if data == False:
                 # The connection has been lost.
                 break

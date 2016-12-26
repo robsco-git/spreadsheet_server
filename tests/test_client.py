@@ -22,13 +22,17 @@ class TestClient(unittest.TestCase):
         self.server.stop()
 
 
-    # def test_connect_invalid_spreadsheet(self):
-    #     try:
-    #         sc_invalid = SpreadsheetClient(TEST_SS + 'z')
-    #     except RuntimeError as e:
-    #         self.assertEqual(str(e), "The requested spreadsheet was not found.")
+    def test_connect_invalid_spreadsheet(self):
+        try:
+            sc_invalid = SpreadsheetClient(TEST_SS + 'z')
+        except RuntimeError as e:
+            self.assertEqual(str(e), "The requested spreadsheet was not found.")
 
+            # Give the ThreadedTCPServer some time to shut down correctly before
+            # the next test
+            sleep(1)
 
+            
     def test_get_sheet_names(self):
         sheet_names = self.sc.get_sheet_names()
         self.assertEqual(sheet_names, ["Sheet1"])

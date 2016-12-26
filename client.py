@@ -24,6 +24,7 @@ PY3 = sys.version_info[0] == 3
 
 IP, PORT = "localhost", 5555
 
+
 class SpreadsheetClient:
 
     def __init__(self, spreadsheet, ip=IP, port=PORT):
@@ -161,5 +162,6 @@ class SpreadsheetClient:
         except socket.error:
             # The client has already disconnected
             pass
+
         self.sock.close()
         

@@ -26,7 +26,6 @@ import os
 import fileinput
 import sys
 
-
 SOFFICE_BINARY = "soffice.bin"
 LOG_FILE = './log/server.log'
 SOFFICE_LOG = './log/soffice.log'
@@ -35,6 +34,7 @@ SOFFICE_PIPE = "soffice_headless"
 SPREADSHEETS_PATH = "./spreadsheets"
 MONITOR_FREQ = 5 # In seconds
 SAVE_PATH = "./saved_spreadsheets/"
+
 
 class SpreadsheetServer:
 
@@ -87,7 +87,7 @@ class SpreadsheetServer:
         logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s',
                             datefmt='%Y%m%d %H:%M:%S',
                             filename=self.log_file,
-                            level=logging.INFO)
+                            level=logging.DEBUG)
 
 
     def __start_soffice(self):
