@@ -19,6 +19,8 @@ from math import pow
 import traceback
 from werkzeug.utils import secure_filename
 
+CELL_REF_ERROR_STR = "Cell range is invalid."
+
 class SpreadsheetConnection:
     """Handles connections to the spreadsheets opened by soffice (LibreOffice).
     """
@@ -27,6 +29,8 @@ class SpreadsheetConnection:
         self.spreadsheet = spreadsheet
         self.lock = lock
         self.save_path = save_path
+
+        self.get_max_row()
 
 
     def lock_spreadsheet(self):
@@ -74,6 +78,16 @@ class SpreadsheetConnection:
                 alpha_index += c_index * pow(26, len(chars)-i-1)
 
         num_index = int(''.join(nums)) - 1 # zero-based
+
+        # Check max values
+        # Column can not be > AMJ == 1023
+        if alpha_index >= 1023:
+            raise ValueError(CELL_REF_ERROR_STR)
+
+        # Row can not be > 1048576
+        if num_index >= 1048576:
+            raise ValueError(CELL_REF_ERROR_STR)
+            
         return alpha_index, num_index
 
 
@@ -163,6 +177,9 @@ class SpreadsheetConnection:
 
         See 'set_cell' and 'set_cell_range' for more information.
         """
+
+        self.__validate_sheet_name(sheet)
+        self.__validate_cell_ref(cell_ref)
         
         if self.__is_single_cell(cell_ref):
             self.set_cell(sheet, cell_ref, value)
@@ -177,8 +194,6 @@ class SpreadsheetConnection:
         'cell_ref' is a LibreOffice style cell reference. eg. "A1".
         'value' is a single string, int or float value.
         """
-
-        self.__validate_sheet_name(sheet)
         
         self.__check_single_cell(cell_ref)
         
@@ -207,8 +222,6 @@ class SpreadsheetConnection:
         requires 'data' of the format:
         [[A1, B1, C1], [A2, B2, C2], [A3, B3, C3]].
         """
-
-        self.__validate_sheet_name(sheet)
 
         self.__check_for_lock()
         
@@ -243,22 +256,57 @@ class SpreadsheetConnection:
         return [s.name for s in self.spreadsheet.sheets]
 
 
+    def __validate_cell_ref(self, cell_ref):
+        """ A cell ref must be of the LibreOffice format
+        e.g. A1 or A1:ABC123."""
+        
+        if type(cell_ref) is not str:
+            raise ValueError(CELL_REF_ERROR_STR)
+
+        if not cell_ref[0].isalpha():
+            raise ValueError(CELL_REF_ERROR_STR)
+
+        if not cell_ref[-1].isnumeric():
+            raise ValueError(CELL_REF_ERROR_STR)
+        
+        if ':' in cell_ref:
+            # Check the second alpha if it exists
+            if not cell_ref[cell_ref.index(':') + 1].isalpha():
+                raise ValueError(CELL_REF_ERROR_STR)
+            
+            # Check the start of the range has a numeric component
+            if not cell_ref[cell_ref.index(':') - 1].isnumeric():
+                raise ValueError(CELL_REF_ERROR_STR)
+
+        # Check for any unallowed characters
+        for ref in cell_ref:
+            if not ref.isnumeric() and not ref.isalpha() and ref != ':':
+                raise ValueError(CELL_REF_ERROR_STR)
+
+        # TODO - Check range for sanity
+        # Reversed ranges should be allowed, they just need to be flipped
+        # e.g. "A5:A1" must become "A1:A5"
+        # Also need to convert "A1:A1" to "A1"
+
+        
     def __validate_sheet_name(self, sheet):
         """Don't want to send an invalid sheet to pyoo."""
+
+        ERROR_STR = "Sheet name is invalid."
         
         sheet_names = self.get_sheet_names()
         if type(sheet) is int:
 
             if sheet < 0 or sheet > len(sheet_names) -1:
-                raise ValueError("Sheet name is invalid.")
+                raise ValueError(ERROR_STR)
             
         elif type(sheet) is str:
 
             if sheet not in sheet_names:
-                raise ValueError("Sheet name is invalid.")
+                raise ValueError(ERROR_STR)
             
         else:
-            raise ValueError("Sheet name is invalid.")
+            raise ValueError(ERROR_STR)
     
             
     def get_cells(self, sheet, cell_ref):
@@ -267,7 +315,10 @@ class SpreadsheetConnection:
 
         See 'get_cell' and 'get_cell_range' for more information.
         """
-        
+
+        self.__validate_sheet_name(sheet)
+        self.__validate_cell_ref(cell_ref)
+                
         if self.__is_single_cell(cell_ref):
             return self.get_cell(sheet, cell_ref)
         else:
@@ -282,8 +333,6 @@ class SpreadsheetConnection:
 
         A single cell value is returned.
         """
-
-        self.__validate_sheet_name(sheet)
 
         self.__check_single_cell(cell_ref)
         
@@ -303,8 +352,6 @@ class SpreadsheetConnection:
         A list of lists is returned for a two dimensional range of cells.
         """
 
-        self.__validate_sheet_name(sheet)
-
         r = self.__cell_range_to_index(cell_ref)
         sheet = self.spreadsheet.sheets[sheet]
 
@@ -321,7 +368,7 @@ class SpreadsheetConnection:
             return sheet[r["row_start"]:r["row_end"] + 1,
                          r["column_start"]:r["column_end"] + 1].values
 
-        
+
     def save_spreadsheet(self, filename):
         """Save the spreadsheet in it's current state.
         

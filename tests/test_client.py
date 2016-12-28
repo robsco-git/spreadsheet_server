@@ -25,6 +25,7 @@ class TestClient(unittest.TestCase):
     def test_connect_invalid_spreadsheet(self):
         try:
             sc_invalid = SpreadsheetClient(TEST_SS + 'z')
+            self.assertTrue(False)
         except RuntimeError as e:
             self.assertEqual(str(e), "The requested spreadsheet was not found.")
 
@@ -47,6 +48,7 @@ class TestClient(unittest.TestCase):
     def test_set_cell_invalid_sheet(self):
         try:
             self.sc.set_cells(SHEET_NAME + 'z', "A1", 5)
+            self.assertTrue(False)
         except RuntimeError as e:
             self.assertEqual(str(e), "Sheet name is invalid.")
 
@@ -59,10 +61,91 @@ class TestClient(unittest.TestCase):
     def test_get_cell_invalid_sheet(self):
         try:
             cell_value = self.sc.get_cells(SHEET_NAME + 'z', "C3")
+            self.assertTrue(False)
         except RuntimeError as e:
             self.assertEqual(str(e), "Sheet name is invalid.")
-        
 
+
+    def test_get_invalid_cell_numeric(self):
+        try:
+            cell_value = self.sc.get_cells(SHEET_NAME, 1)
+            self.assertTrue(False)
+        except RuntimeError as e:
+            self.assertEqual(str(e), "Cell range is invalid.")
+
+
+    def test_get_invalid_cell_missing_alpha(self):
+        try:
+            cell_value = self.sc.get_cells(SHEET_NAME, "1")
+            self.assertTrue(False)
+        except RuntimeError as e:
+            self.assertEqual(str(e), "Cell range is invalid.")
+
+
+    def test_get_invalid_cell_missing_numeric(self):
+        try:
+            cell_value = self.sc.get_cells(SHEET_NAME, "A")
+            self.assertTrue(False)
+        except RuntimeError as e:
+            self.assertEqual(str(e), "Cell range is invalid.")
+
+            
+    def test_get_invalid_cell_missing_start_numeric(self):
+        try:
+            cell_value = self.sc.get_cells(SHEET_NAME, "A:B2")
+            self.assertTrue(False)
+        except RuntimeError as e:
+            self.assertEqual(str(e), "Cell range is invalid.")
+
+
+    def test_get_invalid_cell_missing_end_numeric(self):
+        try:
+            cell_value = self.sc.get_cells(SHEET_NAME, "A1:B")
+            self.assertTrue(False)
+        except RuntimeError as e:
+            self.assertEqual(str(e), "Cell range is invalid.")
+
+
+    def test_get_invalid_cell_missing_start_alpha(self):
+        try:
+            cell_value = self.sc.get_cells(SHEET_NAME, "1:B2")
+            self.assertTrue(False)
+        except RuntimeError as e:
+            self.assertEqual(str(e), "Cell range is invalid.")
+
+
+    def test_get_invalid_cell_missing_end_alpha(self):
+        try:
+            cell_value = self.sc.get_cells(SHEET_NAME, "A1:2")
+            self.assertTrue(False)
+        except RuntimeError as e:
+            self.assertEqual(str(e), "Cell range is invalid.")
+
+
+    def test_get_invalid_cell_negative(self):
+        try:
+            cell_value = self.sc.get_cells(SHEET_NAME, "A-1:B2")
+            self.assertTrue(False)
+        except RuntimeError as e:
+            self.assertEqual(str(e), "Cell range is invalid.")
+
+
+    def test_get_invalid_cell_numeric_too_large(self):
+        try:
+            cell_value = self.sc.get_cells(SHEET_NAME, "A1048577")
+            self.assertTrue(False)
+        except RuntimeError as e:
+            self.assertEqual(str(e), "Cell range is invalid.")
+
+            
+    def test_get_invalid_cell_alpha_too_large(self):
+        try:
+            cell_value = self.sc.get_cells(SHEET_NAME, "AMK1")
+            self.assertTrue(False)
+        except RuntimeError as e:
+            self.assertEqual(str(e), "Cell range is invalid.")
+            
+            
     def test_set_cell_row(self):
         cell_values = [4, 5, 6]
         self.sc.set_cells(SHEET_NAME, "A1:A3", cell_values)
