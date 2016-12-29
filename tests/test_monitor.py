@@ -12,11 +12,21 @@ SAVED_SPREADSHEETS_PATH = "./saved_spreadsheets"
 SHEET_NAME = "Sheet1"
 
 class TestMonitor(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.spreadsheet_server = SpreadsheetServer()
+        cls.spreadsheet_server._SpreadsheetServer__start_soffice()
+        cls.spreadsheet_server._SpreadsheetServer__connect_to_soffice()
+
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.spreadsheet_server._SpreadsheetServer__kill_libreoffice()
+        cls.spreadsheet_server._SpreadsheetServer__close_logfile()
+        
     
     def setUp(self):
-        self.spreadsheet_server = SpreadsheetServer()
-        self.spreadsheet_server._SpreadsheetServer__start_soffice()
-        self.spreadsheet_server._SpreadsheetServer__connect_to_soffice()
         self.spreadsheet_server._SpreadsheetServer__start_monitor_thread()
         self.monitor_thread = self.spreadsheet_server.monitor_thread
         while not self.monitor_thread.initial_scan():
@@ -25,9 +35,6 @@ class TestMonitor(unittest.TestCase):
 
     def tearDown(self):
         self.spreadsheet_server._SpreadsheetServer__stop_monitor_thread()
-        self.spreadsheet_server._SpreadsheetServer__kill_libreoffice()
-        self.spreadsheet_server._SpreadsheetServer__close_logfile()
-
 
     def test_unload_spreadsheet(self):
         self.monitor_thread._MonitorThread__unload_spreadsheet(TEST_SS)

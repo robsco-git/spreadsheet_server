@@ -9,17 +9,24 @@ SPREADSHEETS_PATH = "./spreadsheets"
 SHEET_NAME = "Sheet1"
 
 class TestClient(unittest.TestCase):
-    
-    def setUp(self):
-        self.server = SpreadsheetServer()
-        self.server.run()
 
+    @classmethod
+    def setUpClass(cls):
+        cls.server = SpreadsheetServer()
+        cls.server.run()
+
+        
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.stop()
+
+        
+    def setUp(self):
         self.sc = SpreadsheetClient(TEST_SS)
 
 
     def tearDown(self):
         self.sc.disconnect()
-        self.server.stop()
 
 
     def test_connect_invalid_spreadsheet(self):

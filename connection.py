@@ -79,7 +79,7 @@ class SpreadsheetConnection:
 
         # Check max values
         # Column can not be > AMJ == 1023
-        if alpha_index >= 1023:
+        if alpha_index >= 1024:
             raise ValueError(CELL_REF_ERROR_STR)
 
         # Row can not be > 1048576
