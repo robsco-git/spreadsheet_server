@@ -30,8 +30,6 @@ class SpreadsheetConnection:
         self.lock = lock
         self.save_path = save_path
 
-        self.get_max_row()
-
 
     def lock_spreadsheet(self):
         """Lock the spreadsheet.
