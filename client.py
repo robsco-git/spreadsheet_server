@@ -18,6 +18,7 @@ import socket
 import json
 import traceback
 import sys
+import struct
 
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
@@ -119,7 +120,7 @@ class SpreadsheetClient:
         self.__send(["SAVE", filename])
         return self.__receive()
 
-    
+
     def __send(self, msg):
         """Encode msg into json and then send it over the socket."""
 
@@ -128,19 +129,28 @@ class SpreadsheetClient:
         else:
             json_msg = json.dumps(msg)
             json_msg = bytes(json_msg, "utf-8")
-
+        
+        # Prepend the length of the string to the meg
+        json_msg = struct.pack('>I', len(json_msg)) + json_msg
+            
         try:
             self.sock.sendall(json_msg)
         except:
             traceback.print_exc()
             raise Exception("Could not send message to server")
 
-            
+
     def __receive(self):
         """Receive a message from the client, convert the received utf-8 
         bytes into a string then decode if from json."""
+
+        raw_msg_length = self.__receive_length(4)
+        if not raw_msg_length:
+            return False
+        msg_length = struct.unpack('>I', raw_msg_length)[0]
         
-        recv = self.sock.recv(4096)
+        recv = self.__receive_length(msg_length)
+        
         if recv == b'':
             # The connection has been closed.
             raise Exception("Connection to server closed!")
@@ -153,6 +163,18 @@ class SpreadsheetClient:
             
         return received
 
+
+    def __receive_length(self, length):
+        """Receive length number of bytes from the client."""
+        
+        data = b''
+        while len(data) < length:
+            packet = self.sock.recv(length - len(data))
+            if not packet:
+                return data
+            data += packet
+        return data
+        
     
     def disconnect(self):
         """Disconnect from the server."""

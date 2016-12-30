@@ -20,6 +20,7 @@ from socket import SHUT_RDWR
 import logging
 from connection import SpreadsheetConnection
 from time import sleep
+import struct
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
@@ -38,9 +39,12 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         """
 
         json_msg = json.dumps(msg)
-        json_bytes = bytes(json_msg, "utf-8")
+        json_msg = bytes(json_msg, "utf-8")
 
-        self.request.send(json_bytes)
+        # Prepend the length of the string to the meg
+        json_msg = struct.pack('>I', len(json_msg)) + json_msg
+        
+        self.request.send(json_msg)
         
         logging.debug("Sent: " + json.dumps(msg))
 
@@ -53,7 +57,13 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         returned.
         """
 
-        recv = self.request.recv(4096)
+        raw_msg_length = self.__receive_length(4)
+        if not raw_msg_length:
+            return False
+        msg_length = struct.unpack('>I', raw_msg_length)[0]
+        
+        recv = self.__receive_length(msg_length)
+
         if recv == b'':
             # The connection is closed.
             return False
@@ -65,6 +75,18 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         return recv_string
 
 
+    def __receive_length(self, length):
+        """Receive length number of bytes from the client."""
+        
+        data = b''
+        while len(data) < length:
+            packet = self.request.recv(length - len(data))
+            if not packet:
+                return data
+            data += packet
+        return data
+
+    
     def __make_connection(self):
         """Handle first request to server and check that it adheres to the
         protocol.
