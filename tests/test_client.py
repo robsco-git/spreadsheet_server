@@ -166,6 +166,11 @@ class TestClient(unittest.TestCase):
         self.assertEqual(cell_values, [3, 3.5, 6])
 
 
+    def test_get_cell_column_large_alpha(self):
+        cell_values = self.sc.get_cells(SHEET_NAME, "AF5:AF186")
+        self.assertEqual(cell_values, ['' for x in range(5, 186 + 1)])
+        
+
     def test_set_cell_range(self):
         cell_values = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
         self.sc.set_cells(SHEET_NAME, "A1:C3", cell_values)

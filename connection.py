@@ -76,6 +76,7 @@ class SpreadsheetConnection:
                 alpha_index += c_index * pow(26, len(chars)-i-1)
 
         num_index = int(''.join(nums)) - 1 # zero-based
+        alpha_index = int(alpha_index)
 
         # Check max values
         # Column can not be > AMJ == 1023
@@ -352,6 +353,8 @@ class SpreadsheetConnection:
 
         r = self.__cell_range_to_index(cell_ref)
         sheet = self.spreadsheet.sheets[sheet]
+
+        logging.debug("Requested cell area: " + str(r))
 
         # Cell ranges are requested as: [vertical area, horizontal area]
         
