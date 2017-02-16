@@ -25,8 +25,9 @@ from signal import SIGTERM
 import os
 import fileinput
 import sys
+import psutil
 
-SOFFICE_BINARY = "soffice.bin"
+SOFFICE_PROCNAME = "soffice.bin"
 LOG_FILE = './log/server.log'
 SOFFICE_LOG = './log/soffice.log'
 HOST, PORT = "localhost", 5555
@@ -93,21 +94,38 @@ class SpreadsheetServer:
     def __start_soffice(self):
 
         def get_pid(name):
-            return map(int,subprocess.check_output(["pidof",name]).split())
+            for proc in psutil.process_iter():
+                try:
+                    if proc.name() == SOFFICE_PROCNAME:
+                        return proc.pid
+                except psutil.ZombieProcess:
+                    pass
+            return False
 
+        def get_soffice_binay_path():
+            try:
+                
+                return str(
+                    subprocess.check_output(["which", "soffice"])[:-1],
+                    encoding="utf-8"
+                )
+            except subprocess.CalledProcessError:
+                raise RuntimeError(
+                    "The soffice binary was not found. Is LibreOffice installed?"
+                )
         
-        def killall(pids):
+        def kill_process(pid):
             logging.warning('Killing existing LibreOffice process')
-            for pid in pids:
-                os.kill(pid, SIGTERM)
+            os.kill(pid, SIGTERM)
         
 
         # Check for a already running LibreOffice process
-        try:
-            pids = get_pid(SOFFICE_BINARY)
+        pid = get_pid(SOFFICE_PROCNAME)
+        if pid != False:
 
             if self.ask_kill:
-                ask_str = "LibreOffice is already running. Would you like to kill it? (Y/n): "
+                ask_str = ("LibreOffice is already running. Would you like to kill "
+                "it? (Y/n): ")
 
                 while True:
 
@@ -120,23 +138,21 @@ class SpreadsheetServer:
                         break
 
                 if answer in ['y', '']:
-                    killall(pids)
+                    kill_process(pid)
                 else:
                     print("Goodbye!")
                     exit()
                     
             else:
-                killall(pids)
+                kill_process(pid)
                 
-        except subprocess.CalledProcessError:
-            # There is no soffice.bin process
-            pass
-
-        # Use which to get the binary location
+        soffice_path = get_soffice_binay_path()
         
         logging.info('Starting the soffice process.')
-        command = '/usr/bin/soffice --accept="pipe,name=' + self.soffice_pipe +';urp;"\
-        --norestore --nologo --nodefault --headless'
+        command = soffice_path \
+                  + ' --accept="pipe,name=' \
+                  + self.soffice_pipe \
+                  + ';urp;" --norestore --nologo --nodefault --headless'
 
         self.logfile = open(self.soffice_log, "w")
         self.soffice_process = subprocess.Popen(
@@ -146,12 +162,14 @@ class SpreadsheetServer:
     def __connect_to_soffice(self):
         """Make a connection to soffice and fail if it can not connect."""
         
-        MAX_ATTEMPTS = 60
+        MAX_ATTEMPTS = 30
 
         attempt = 0
         while 1:
             if attempt > MAX_ATTEMPTS: # soffice process isin't coming up
-                raise RuntimeError("Could not connect to soffice process.")
+                raise RuntimeError(
+                    "Could not connect to the soffice process. Did LibreOffice start?"
+                )
 
             try:
                 self.soffice = pyoo.Desktop(pipe=SOFFICE_PIPE)
@@ -179,19 +197,32 @@ class SpreadsheetServer:
         """
 
         logging.info('Starting spreadsheet_server.')
-        
-        try:
-            self.server = ThreadedTCPServer(self.save_path,
-                (self.host, self.port),
-                ThreadedTCPRequestHandler
-            )
-            
-        except OSError:
-            import traceback
-            traceback.print_exc()
-            print("Error: The port is in use. Maybe the server is already running?")
-            exit()
 
+        MAX_ATTEMPTS = 60
+        attempt = 0
+        
+        def start_threaded_tcp_server(attempt):
+            try:
+                self.server = ThreadedTCPServer(
+                    self.save_path,
+                    (self.host, self.port),
+                    ThreadedTCPRequestHandler
+                )
+            
+            except OSError:
+                attempt += 1
+
+                if attempt > MAX_ATTEMPTS:
+                    import traceback
+                    traceback.print_exc()
+                    print("Error: The port is in use. Maybe the server is already" 
+                          "running?")
+                    exit()
+
+                sleep(1)
+                start_threaded_tcp_server(attempt) # Try again
+
+        start_threaded_tcp_server(attempt)
 
         self.server.spreadsheets = self.spreadsheets
         self.server.locks = self.locks
@@ -244,7 +275,8 @@ class SpreadsheetServer:
     def __kill_libreoffice(self):
         """Terminate the soffice.bin process."""
 
-        self.soffice_process.send_signal(SIGTERM)        
+        self.soffice_process.send_signal(SIGTERM)
+        self.soffice_process.wait()
         
 
     def __close_logfile(self):
@@ -277,6 +309,7 @@ if __name__ == "__main__":
     spreadsheet_server = SpreadsheetServer(ask_kill=True)
     try:
         print('Logging to: ' + spreadsheet_server.log_file)
+        print('Connecting to LibreOffice...')
         spreadsheet_server.run()
         print('Up and listening for connections!')
         while True: sleep(100)

@@ -35,6 +35,7 @@ class TestMonitor(unittest.TestCase):
 
     def tearDown(self):
         self.spreadsheet_server._SpreadsheetServer__stop_monitor_thread()
+        
 
     def test_unload_spreadsheet(self):
         self.monitor_thread._MonitorThread__unload_spreadsheet(TEST_SS)
@@ -64,7 +65,7 @@ class TestMonitor(unittest.TestCase):
 
         self.assertTrue(TEST_SS in spreadsheets)
         self.assertTrue(TEST_SS in locks)
-        
+
 
     def test_check_removed_when_renamed(self):
         # Rename example.ods to example_moved.ods
