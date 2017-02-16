@@ -62,7 +62,11 @@ Server:
 
 	Python packages installed to the virtualenv:
 	pyoo (for the connection to LibreOffice)
+	psutil (for cross platform pid discovery for the soffice process)
 	werkzeug (for securing filenames when saving spreadsheets)
+
+	You can install the required packages with pip and the requirements.txt file:
+	pip install -r requirements.txt
 
 Client:
 	python2 or python3.
