@@ -8,6 +8,7 @@ rewriting the logic from scratch, this tool was born.
 The tool has been developed to work on a headless GNU/Linux system where the
 server and client are on the same machine.
 
+
 --------
 Features
 --------
@@ -22,6 +23,7 @@ same spreadsheet.
 * By default, when a spreadsheet file changes on disk, it will be closed and
   opened in LibreOffice.
 * Spreadsheets can be saved - useful for debugging purposes.
+
 
 -----
 Usage
@@ -40,16 +42,18 @@ be set.
 Have a look at the example_client.py for an overview of how to use the functions
 exposed by client.py.
 
+
 ------------
 How it works
 ------------
 A LibreOffice instance is launched by 'server.py' in a headless state.
-By default, the './spreadsheets' directory is polled every 60 seconds for file
+By default, the './spreadsheets' directory is polled every 5 seconds for file
 changes.
 New spreadsheets in the directory are opened with LibreOffice and removed
 spreadsheets are closed in LibreOffice.
 The 'client.py' connects to the server and can update cells and retrieve
 their calculated content.
+
 
 ------------
 Requirements
@@ -65,15 +69,34 @@ Server:
 	psutil (for cross platform pid discovery for the soffice process)
 	werkzeug (for securing filenames when saving spreadsheets)
 
-	You can install the required packages with pip and the requirements.txt file:
-	pip install -r requirements.txt
-
 Client:
 	python2 or python3.
+
+
+------------
+Installation
+------------
+Ubuntu Server 14.04
+-------------------
+sudo apt-get update && sudo apt-get upgrade
+sudo apt-get install git python3 python3-dev python-virtualenv libreoffice-calc python3-uno
+git clone https://github.com/robsco-git/spreadsheet_server.git
+cd spreadsheet_server
+virtualenv --system-site-packages -p python3 venv
+. venv/bin/activate
+pip install -r requirements.txt
+python server.py
+
+Ubuntu Server 16.04
+-------------------
+The same steps as for 14.04 and in addition you need GCC to build
+psutil
+sudo apt-get install gcc
+
 
 -----
 Tests
 -----
-The tests are currently being written.
 You can run the all the current tests with 'python -m unittest discover'.
-Use './coverage.sh' to run the coverage analysis of the current tests and have a look in the generated htmlcov directory.
+Use './coverage.sh' to run the coverage analysis of the current tests and have a look
+in the generated htmlcov directory.
