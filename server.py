@@ -27,6 +27,7 @@ import fileinput
 import sys
 import psutil
 
+
 SOFFICE_PROCNAME = "soffice.bin"
 LOG_FILE = './log/server.log'
 SOFFICE_LOG = './log/soffice.log'
@@ -47,7 +48,7 @@ class SpreadsheetServer:
                  reload_on_disk_change=True,
                  ask_kill=False,
                  save_path=SAVE_PATH):
-        
+
         self.log_file = log_file # Where 'logging' logs to
 
         # Where the output from LibreOffice is logged to
@@ -133,7 +134,7 @@ class SpreadsheetServer:
                     answer = answer.lower()
                     
                     if answer not in ['y', 'n', '']:
-                        Print("Please respond with 'y' or 'n'.")
+                        print("Please respond with 'y' or 'n'.")
                     else:
                         break
 
@@ -303,7 +304,6 @@ class SpreadsheetServer:
 
             
 if __name__ == "__main__":
-
     print('Starting spreadsheet_server...')
 
     spreadsheet_server = SpreadsheetServer(ask_kill=True)
