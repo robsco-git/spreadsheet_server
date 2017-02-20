@@ -15,8 +15,6 @@ Features
 * 'Instant' access to cells in the spreadsheets because they open in
 LibreOffice Calc.
 * All the function calculation support and power of LibreOffice Calc.
-* Server requests are threaded so concurrent connections to different
-spreadsheets are supported.
 * A given spreadsheet is locked (within python, not on disk) when it is accessed
 to prevent state irregularities across multiple concurrent connections to the
 same spreadsheet.
