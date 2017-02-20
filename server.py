@@ -126,10 +126,13 @@ class SpreadsheetServer:
                     "The soffice binary was not found. Is LibreOffice installed?"
                 )
         
+
         def kill_process(pid):
-            logging.warning('Killing existing LibreOffice process')
-            os.kill(pid, SIGTERM)
-        
+            logging.debug('Killing existing LibreOffice process')
+            process = psutil.Process(pid=pid)
+            process.terminate()
+            process.wait()
+            
 
         # Check for a already running LibreOffice process
         pid = get_pid(SOFFICE_PROCNAME)
@@ -191,14 +194,9 @@ class SpreadsheetServer:
                 logging.info("Connected to soffice.")
                 break
 
-            except OSError:
+            except (OSError, IOError):
                 attempt += 1
-                sleep(1)
-
-            except IOError:
-                print("IOError in connection to soffice")
-                attempt += 1
-                sleep(1)
+                sleep(1) # Wait for the soffice process to start
 
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -224,7 +222,7 @@ class SpreadsheetServer:
                     ThreadedTCPRequestHandler
                 )
             
-            except OSError:
+            except (OSError, socket.error):
                 attempt += 1
 
                 if attempt > MAX_ATTEMPTS:
@@ -275,13 +273,14 @@ class SpreadsheetServer:
         self.monitor_thread.stop_thread()
         self.monitor_thread.join()
 
-
+        
     def __stop_threaded_tcp_server(self):
         """Stop the ThreadedTCPServer."""
 
         try:
-            self.server.server_close()
             self.server.shutdown()
+            self.server.server_close()
+
         except AttributeError:
             # The server was never set up
             pass
@@ -290,7 +289,7 @@ class SpreadsheetServer:
     def __kill_libreoffice(self):
         """Terminate the soffice.bin process."""
 
-        self.soffice_process.send_signal(SIGTERM)
+        self.soffice_process.terminate()
         self.soffice_process.wait()
         
 
