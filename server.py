@@ -14,6 +14,15 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import platform
+import os
+import sys
+if platform.system() == 'FreeBSD':
+    sys.path.append("/usr/local/lib/libreoffice/program")
+    os.environ[
+        "URE_BOOTSTRAP"
+    ] = "file:///usr/local/lib/libreoffice/program/fundamentalrc"
+
 import logging
 import pyoo
 import subprocess
@@ -22,10 +31,11 @@ from time import sleep
 from request_handler import ThreadedTCPRequestHandler, ThreadedTCPServer
 from monitor import MonitorThread
 from signal import SIGTERM
-import os
 import fileinput
-import sys
 import psutil
+
+PY2 = sys.version_info[0] == 2
+PY3 = sys.version_info[0] == 3
 
 
 SOFFICE_PROCNAME = "soffice.bin"
@@ -104,8 +114,9 @@ class SpreadsheetServer:
             return False
 
         def get_soffice_binay_path():
+            if PY2:
+                str = unicode
             try:
-                
                 return str(
                     subprocess.check_output(["which", "soffice"])[:-1],
                     encoding="utf-8"
@@ -130,7 +141,10 @@ class SpreadsheetServer:
 
                 while True:
 
-                    answer = input(ask_str)
+                    if PY2:
+                        answer = raw_input(ask_str)
+                    else:
+                        answer = input(ask_str)
                     answer = answer.lower()
                     
                     if answer not in ['y', 'n', '']:

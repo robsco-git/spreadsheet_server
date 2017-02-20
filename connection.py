@@ -18,6 +18,11 @@ import logging
 from math import pow
 import traceback
 from werkzeug.utils import secure_filename
+from threading import ThreadError
+
+import sys
+PY2 = sys.version_info[0] == 2
+PY3 = sys.version_info[0] == 3
 
 CELL_REF_ERROR_STR = "Cell range is invalid."
 
@@ -48,13 +53,13 @@ class SpreadsheetConnection:
         try:
             self.lock.release()
             return True
-        except RuntimeError:
+        except (RuntimeError, ThreadError):
             return False
 
 
     def __get_xy_index(self, cell_ref):
         chars = [c for c in cell_ref if c.isalpha()]
-        nums = [n for n in cell_ref if n.isnumeric()]
+        nums = [n for n in cell_ref if n.isdigit()]
 
         alpha_index = 0
         for i, c in enumerate(chars):
@@ -252,12 +257,17 @@ class SpreadsheetConnection:
 
     def get_sheet_names(self):
         """Returns a list of all sheet names in the workbook."""
+
+        # With python2 s.name is of the 'unicode' type
         return [s.name for s in self.spreadsheet.sheets]
 
 
     def __validate_cell_ref(self, cell_ref):
         """ A cell ref must be of the LibreOffice format
         e.g. A1 or A1:ABC123."""
+
+        if PY2: # Cell ref names are returned as python2 unicode types
+            str = unicode
         
         if type(cell_ref) is not str:
             raise ValueError(CELL_REF_ERROR_STR)
@@ -265,7 +275,7 @@ class SpreadsheetConnection:
         if not cell_ref[0].isalpha():
             raise ValueError(CELL_REF_ERROR_STR)
 
-        if not cell_ref[-1].isnumeric():
+        if not cell_ref[-1].isdigit():
             raise ValueError(CELL_REF_ERROR_STR)
         
         if ':' in cell_ref:
@@ -274,12 +284,12 @@ class SpreadsheetConnection:
                 raise ValueError(CELL_REF_ERROR_STR)
             
             # Check the start of the range has a numeric component
-            if not cell_ref[cell_ref.index(':') - 1].isnumeric():
+            if not cell_ref[cell_ref.index(':') - 1].isdigit():
                 raise ValueError(CELL_REF_ERROR_STR)
 
         # Check for any unallowed characters
         for ref in cell_ref:
-            if not ref.isnumeric() and not ref.isalpha() and ref != ':':
+            if not ref.isdigit() and not ref.isalpha() and ref != ':':
                 raise ValueError(CELL_REF_ERROR_STR)
 
         # TODO - Check range for sanity
@@ -292,7 +302,10 @@ class SpreadsheetConnection:
         """Don't want to send an invalid sheet to pyoo."""
 
         ERROR_STR = "Sheet name is invalid."
-        
+
+        if PY2: # Sheet names are returned as python2 unicode types
+            str = unicode
+
         sheet_names = self.get_sheet_names()
         if type(sheet) is int:
 
@@ -300,7 +313,6 @@ class SpreadsheetConnection:
                 raise ValueError(ERROR_STR)
             
         elif type(sheet) is str:
-
             if sheet not in sheet_names:
                 raise ValueError(ERROR_STR)
             

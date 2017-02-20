@@ -90,6 +90,35 @@ The same steps as for 14.04 and in addition you need GCC to build
 psutil
 sudo apt-get install gcc
 
+FreeBSD 11.0
+------------
+Using LibreOffice installed from pkg
+------------------------------------
+At the time of writing, the python uno modules are built using python2 so you will
+need to run spreadsheet_server with python2 if you use the LibreOffice 'pkg' binary.
+freebsd-update fetch install
+sudo pkg install git libreoffice py27-virtualenv
+git clone https://github.com/robsco-git/spreadsheet_server.git
+cd spreadsheet_server
+virtualenv venv
+. venv/bin/activate
+pip install -r requirements.txt
+python server.py
+
+Using LibreOffice installed from the ports tree, compiling the LibreOffice python
+modules with python3
+--------------------
+freebsd-update fetch install
+pkg install git py27-virtualenv
+cd /usr/ports/editors/libreoffice
+setenv PYTHON_VERSION python3.5
+make clean install
+git clone https://github.com/robsco-git/spreadsheet_server.git
+cd spreadsheet_server
+virtualenv venv
+. venv/bin/activate
+pip install -r requirements.txt
+python server.py
 
 -----
 Tests

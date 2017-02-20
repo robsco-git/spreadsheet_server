@@ -39,7 +39,7 @@ class MonitorThread(threading.Thread):
 
         self.done_scan = False # Done an initial scan or not
 
-        super().__init__()
+        super(MonitorThread, self).__init__()
      
 
     def stop_thread(self):
