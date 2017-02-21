@@ -36,6 +36,12 @@ import psutil
 
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
+if PY2:
+    string_type = unicode
+elif PY3:
+    string_type = str
+else:
+    raise RuntimeError("Python version not supported.")
 
 
 SOFFICE_PROCNAME = "soffice.bin"
@@ -114,10 +120,8 @@ class SpreadsheetServer:
             return False
 
         def get_soffice_binay_path():
-            if PY2:
-                str = unicode
             try:
-                return str(
+                return string_type(
                     subprocess.check_output(["which", "soffice"])[:-1],
                     encoding="utf-8"
                 )

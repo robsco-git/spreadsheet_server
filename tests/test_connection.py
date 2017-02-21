@@ -7,6 +7,13 @@ from signal import SIGTERM
 import sys
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
+if PY2:
+    string_type = unicode
+elif PY3:
+    string_type = str
+else:
+    raise RuntimeError("Python version not supported.")
+
 
 TEST_SS = "example.ods"
 SOFFICE_PIPE = "soffice_headless"
@@ -164,9 +171,6 @@ class TestConnection(unittest.TestCase):
         value = self.ss_con._SpreadsheetConnection__convert_to_float_if_numeric(
             u"123A")
 
-        if PY2:
-            str = unicode
-        
         self.assertTrue(type(value) is str)
 
 

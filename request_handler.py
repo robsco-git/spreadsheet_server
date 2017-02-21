@@ -20,8 +20,10 @@ PY3 = sys.version_info[0] == 3
 
 if PY2:
     import SocketServer as socketserver
+    string_type = unicode
 elif PY3:
     import socketserver
+    string_type = str
 else:
     raise RuntimeError("Python version not supported.")
     
@@ -82,14 +84,11 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         if recv == b'':
             # The connection is closed.
             return False
-
-        if PY2:
-            str = unicode
             
-        recv_json = str(recv, encoding="utf-8")
+        recv_json = string_type(recv, encoding="utf-8")
         recv_string = json.loads(recv_json)
         
-        logging.debug("Received: " + str(recv_string))
+        logging.debug("Received: " + string_type(recv_string))
         return recv_string
 
 
