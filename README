@@ -90,12 +90,30 @@ The same steps as for 14.04 and in addition you need GCC to build
 psutil
 sudo apt-get install gcc
 
+Running the server with python2 on Ubuntu Server
+------------------------------------------------
+First off, keep in mind that a python2 spreadsheet_server client can connect to a 
+python3 spreadsheet_server server.
+
+
+The Ubuntu team has removed the 'python-uno' package in favour of the 'python3-uno' 
+package. Running the spreadsheet_server server component with python2 requires
+the LibreOffice 'uno' module built for python2. If you really need to run the server 
+as python2 on Ubuntu Server, You will need to build LibreOffice with python2 
+support. Here is a script outlining how to do so for an older version of LibreOffice:
+https://gist.github.com/hbrunn/6f4a007a6ff7f75c0f8b
+
+Also, here is some more discussion on the topic:
+http://askubuntu.com/a/418550
+
 FreeBSD 11.0
 ------------
 Using LibreOffice installed from pkg
 ------------------------------------
-At the time of writing, the python uno modules are built using python2 so you will
-need to run spreadsheet_server with python2 if you use the LibreOffice 'pkg' binary.
+At the time of writing, the Python-UNO module, is built using python2 when you
+install the binary version of LibreOffice provided by pkg. If you decide to use the 
+pkg version of LibreOffice, you will need to run the spreadsheet_server server 
+component with python2:
 freebsd-update fetch install
 sudo pkg install git libreoffice py27-virtualenv
 git clone https://github.com/robsco-git/spreadsheet_server.git
@@ -106,8 +124,8 @@ pip install -r requirements.txt
 python server.py
 
 Using LibreOffice installed from the ports tree, compiling the LibreOffice python
-modules with python3
---------------------
+modules with python3.5
+----------------------
 freebsd-update fetch install
 pkg install git py27-virtualenv
 cd /usr/ports/editors/libreoffice
@@ -119,6 +137,14 @@ virtualenv venv
 . venv/bin/activate
 pip install -r requirements.txt
 python server.py
+
+
+---------
+Questions
+---------
+What is UNO? What is Python-UNO? What is PyOO?
+The first few paragraphs of the PyOO README should answer most of your questions:
+https://github.com/seznam/pyoo/blob/master/README.rst
 
 -----
 Tests
