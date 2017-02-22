@@ -33,6 +33,7 @@ from monitor import MonitorThread
 from signal import SIGTERM
 import fileinput
 import psutil
+import socket
 
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
