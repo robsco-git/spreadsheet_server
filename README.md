@@ -6,14 +6,15 @@ spreadsheet_server was built to aid rapid web tool development where the logic
 was already implemented in Microsoft Excel/LibreOffice Calc. Instead of
 rewriting the logic from scratch, this tool was born.
 
-The tool has been developed to work on a headless GNU/Linux system where the
-server and client are on the same machine.
+The tool has been developed to work on a headless GNU/Linux or FreeBSD system 
+where the server and client are on the same machine.
 
 ## Features
 
 * 'Instant' access to cells in the spreadsheets as they open in LibreOffice Calc.
 * All the function calculation support and power of LibreOffice Calc.
 * A given spreadsheet is locked (within python, not on disk) when it is accessed to prevent state irregularities across multiple concurrent connections to the same spreadsheet.
+* Monitoring of a directory with automatic loading and unloading of spreadsheets.
 * By default, when a spreadsheet file changes on disk, it will be closed and
   opened in LibreOffice.
 * Spreadsheets can be saved - useful for debugging purposes.
@@ -38,12 +39,12 @@ exposed by the client. This is a good place to start.
 
 ## How it works
 
-A LibreOffice instance is launched by 'server.py' in a headless state.
-By default, the './spreadsheets' directory is polled every 5 seconds for file
+* A LibreOffice instance is launched by 'server.py' in a headless state.
+* By default, the './spreadsheets' directory is polled every 5 seconds for file
 changes.
-New spreadsheets in the directory are opened with LibreOffice and removed
+* New spreadsheets in the directory are opened with LibreOffice and removed
 spreadsheets are closed in LibreOffice.
-The 'client.py' connects to the server and can update cells and retrieve
+* The 'client.py' connects to the server and can update cells and retrieve
 their calculated content.
 
 ## Requirements
@@ -84,7 +85,7 @@ The same steps as for 14.04 and in addition you need GCC to build psutil
 sudo apt-get install gcc
 ```
 
-#### Running the server with python2 on Ubuntu Server
+#### Running the server component with python2 on Ubuntu Server
 
 First off, keep in mind that a python2 spreadsheet_server client can connect to a
 python3 spreadsheet_server server.
