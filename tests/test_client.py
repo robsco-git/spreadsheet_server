@@ -1,17 +1,26 @@
 import unittest
 from .context import SpreadsheetServer, SpreadsheetClient
 from time import sleep
-import os
+import os, shutil
 
-TEST_SS = "example.ods"
+EXAMPLE_SPREADSHEET = "example.ods"
 SOFFICE_PIPE = "soffice_headless"
 SPREADSHEETS_PATH = "./spreadsheets"
+TESTS_PATH = "./tests"
 SHEET_NAME = "Sheet1"
 
 class TestClient(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        # Copy the example spreadsheet from the tests directory into the spreadsheets 
+        # directory
+
+        shutil.copyfile(
+            TESTS_PATH + '/' + EXAMPLE_SPREADSHEET, 
+            SPREADSHEETS_PATH + '/' + EXAMPLE_SPREADSHEET
+        )
+
         cls.server = SpreadsheetServer()
         cls.server.run()
 
@@ -19,10 +28,11 @@ class TestClient(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.server.stop()
+        os.remove(SPREADSHEETS_PATH + '/' + EXAMPLE_SPREADSHEET)
 
         
     def setUp(self):
-        self.sc = SpreadsheetClient(TEST_SS)
+        self.sc = SpreadsheetClient(EXAMPLE_SPREADSHEET)
 
 
     def tearDown(self):
@@ -31,7 +41,7 @@ class TestClient(unittest.TestCase):
 
     def test_connect_invalid_spreadsheet(self):
         try:
-            sc_invalid = SpreadsheetClient(TEST_SS + 'z')
+            sc_invalid = SpreadsheetClient(EXAMPLE_SPREADSHEET + 'z')
             self.assertTrue(False)
         except RuntimeError as e:
             self.assertEqual(str(e), "The requested spreadsheet was not found.")

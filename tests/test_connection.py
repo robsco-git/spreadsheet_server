@@ -1,6 +1,6 @@
 import unittest
 import threading
-import os
+import os, shutil
 from .context import SpreadsheetConnection, SpreadsheetServer
 from signal import SIGTERM
 
@@ -15,14 +15,23 @@ else:
     raise RuntimeError("Python version not supported.")
 
 
-TEST_SS = "example.ods"
+EXAMPLE_SPREADSHEET = "example.ods"
 SOFFICE_PIPE = "soffice_headless"
 SPREADSHEETS_PATH = "./spreadsheets"
+TESTS_PATH = "./tests"
 
 class TestConnection(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        # Copy the example spreadsheet from the tests directory into the spreadsheets 
+        # directory
+
+        shutil.copyfile(
+            TESTS_PATH + '/' + EXAMPLE_SPREADSHEET, 
+            SPREADSHEETS_PATH + '/' + EXAMPLE_SPREADSHEET
+        )
+
         cls.spreadsheet_server = SpreadsheetServer()
         cls.spreadsheet_server._SpreadsheetServer__start_soffice()
         cls.spreadsheet_server._SpreadsheetServer__connect_to_soffice()
@@ -32,12 +41,13 @@ class TestConnection(unittest.TestCase):
     def tearDownClass(cls):
         cls.spreadsheet_server._SpreadsheetServer__kill_libreoffice()
         cls.spreadsheet_server._SpreadsheetServer__close_logfile()
+        os.remove(SPREADSHEETS_PATH + '/' + EXAMPLE_SPREADSHEET)
     
     
     def setUp(self):
         soffice = self.spreadsheet_server.soffice
         self.spreadsheet = soffice.open_spreadsheet(
-            SPREADSHEETS_PATH + "/" + TEST_SS)
+            SPREADSHEETS_PATH + "/" + EXAMPLE_SPREADSHEET)
 
         lock = threading.Lock()
         self.ss_con = SpreadsheetConnection(self.spreadsheet, lock,
@@ -280,27 +290,27 @@ class TestConnection(unittest.TestCase):
     )
 
     def test_save_spreadsheet(self):
-        path = "./saved_spreadsheets/" + TEST_SS + ".new"
+        path = "./saved_spreadsheets/" + EXAMPLE_SPREADSHEET + ".new"
 
         if os.path.exists(path):
             os.remove(path)
         
         self.ss_con.lock_spreadsheet()
-        status = self.ss_con.save_spreadsheet(TEST_SS + ".new")
+        status = self.ss_con.save_spreadsheet(EXAMPLE_SPREADSHEET + ".new")
         self.assertTrue(status)
         self.assertTrue(os.path.exists(path))
         self.ss_con.unlock_spreadsheet()
 
 
     def test_save_spreadsheet_no_lock(self):
-        path = "./saved_spreadsheets/" + TEST_SS + ".new"
+        path = "./saved_spreadsheets/" + EXAMPLE_SPREADSHEET + ".new"
 
         if os.path.exists(path):
             os.remove(path)
 
-        status = self.ss_con.save_spreadsheet(TEST_SS + ".new")
+        status = self.ss_con.save_spreadsheet(EXAMPLE_SPREADSHEET + ".new")
         self.assertFalse(status)
-        self.assertFalse(os.path.exists("./saved_spreadsheets/" + TEST_SS +
+        self.assertFalse(os.path.exists("./saved_spreadsheets/" + EXAMPLE_SPREADSHEET +
                                        ".new"))
 
         
