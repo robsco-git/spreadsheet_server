@@ -14,14 +14,27 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import shutil, os
 from client import SpreadsheetClient
 
 if __name__ == "__main__":
     """This script shows how the differnet functions exposed by client.py can be
     used."""
-    
+
     EXAMPLE_SPREADSHEET = "example.ods"
+
+    # Copy the example spreadsheet from the tests directory into the spreadsheets 
+    # directory
+
+    shutil.copyfile(
+        os.path.join("tests", EXAMPLE_SPREADSHEET), 
+        os.path.join("spreadsheets", EXAMPLE_SPREADSHEET)
+    )
+
     SHEET_NAME = "Sheet1"
+
+    print("Waiting for the example spreadsheet to be scanned and loaded into LibreOffice.")
+
     sc = SpreadsheetClient(EXAMPLE_SPREADSHEET)
     
     # Get sheet names
@@ -57,3 +70,5 @@ if __name__ == "__main__":
     sc.save_spreadsheet(EXAMPLE_SPREADSHEET)
     
     sc.disconnect()
+
+    os.remove(os.path.join("spreadsheets", EXAMPLE_SPREADSHEET))
