@@ -141,6 +141,17 @@ What is UNO? What is Python-UNO? What is PyOO?
 The first few paragraphs of the PyOO README should answer most of your questions:
 https://github.com/seznam/pyoo/blob/master/README.rst
 
+## Notes
+
+### Symbolic links and lock files
+
+If you symbolically link a spreadsheet itself, the lock files that LibreOffice 
+creates and uses are stored in the directory where the file is located, not in the 
+directory where the symbolic link is located. It is recommended that you place your 
+spreadsheet(s) into a directory and symbolically link that directory into the 
+'./spreadsheets' directory. This way, LibreOffice will always be able to locate the 
+lock files it needs. You can use a directory per project if you like.
+
 ## Tests
 
 You can run the all the current tests with 'python -m unittest discover'.
