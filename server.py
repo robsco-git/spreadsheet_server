@@ -46,27 +46,29 @@ else:
 
 
 SOFFICE_PROCNAME = "soffice.bin"
-LOG_FILE = './log/server.log'
 SOFFICE_LOG = './log/soffice.log'
 HOST, PORT = "localhost", 5555
 SOFFICE_PIPE = "soffice_headless"
 SPREADSHEETS_PATH = "./spreadsheets"
 MONITOR_FREQ = 5 # In seconds
 SAVE_PATH = "./saved_spreadsheets/"
-
+LOG_LEVEL = logging.INFO
+LOG_FILE = './log/server.log'
 
 class SpreadsheetServer:
 
-    def __init__(self, log_file=LOG_FILE, soffice_log=SOFFICE_LOG,
+    def __init__(self,
+                 soffice_log=SOFFICE_LOG,
                  host=HOST, port=PORT,
                  soffice_pipe=SOFFICE_PIPE,
                  spreadsheets_path=SPREADSHEETS_PATH,
                  monitor_frequency=MONITOR_FREQ,
                  reload_on_disk_change=True,
                  ask_kill=False,
-                 save_path=SAVE_PATH):
+                 save_path=SAVE_PATH,
+                 log_level=LOG_LEVEL,
+                 log_file=LOG_FILE):
 
-        self.log_file = log_file # Where 'logging' logs to
 
         # Where the output from LibreOffice is logged to
         self.soffice_log = soffice_log
@@ -99,6 +101,9 @@ class SpreadsheetServer:
         self.locks = {} # A lock for each spreadsheet.
         self.hashes = {} # A hash of the file contents for each spreadsheet.
 
+        self.log_level = log_level
+        self.log_file = log_file # Where 'logging' logs to
+
         
     def __logging(self):
         """Set up logging."""
@@ -106,7 +111,7 @@ class SpreadsheetServer:
         logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s',
                             datefmt='%Y%m%d %H:%M:%S',
                             filename=self.log_file,
-                            level=logging.DEBUG)
+                            level=self.log_level)
 
 
     def __start_soffice(self):
@@ -133,7 +138,7 @@ class SpreadsheetServer:
         
 
         def kill_process(pid):
-            logging.debug('Killing existing LibreOffice process')
+            logging.warning('Killing existing LibreOffice process')
             process = psutil.Process(pid=pid)
             process.terminate()
             process.wait()

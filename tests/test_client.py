@@ -2,12 +2,18 @@ import unittest
 from .context import SpreadsheetServer, SpreadsheetClient
 from time import sleep
 import os, shutil
+import sys
+import logging
+
+PY2 = sys.version_info[0] == 2
+PY3 = sys.version_info[0] == 3
 
 EXAMPLE_SPREADSHEET = "example.ods"
 SOFFICE_PIPE = "soffice_headless"
 SPREADSHEETS_PATH = "./spreadsheets"
 TESTS_PATH = "./tests"
 SHEET_NAME = "Sheet1"
+
 
 class TestClient(unittest.TestCase):
 
@@ -21,7 +27,7 @@ class TestClient(unittest.TestCase):
             SPREADSHEETS_PATH + '/' + EXAMPLE_SPREADSHEET
         )
 
-        cls.server = SpreadsheetServer()
+        cls.server = SpreadsheetServer(log_level=logging.CRITICAL)
         cls.server.run()
 
         
@@ -199,7 +205,20 @@ class TestClient(unittest.TestCase):
         self.assertTrue(os.path.exists(saved_path))
 
         os.remove(saved_path)
-        
+
+
+    def test_unicode(self):
+        if PY3:
+            for i in range(1000):
+                self.sc.set_cells(SHEET_NAME, "A1", chr(i))
+                cell = self.sc.get_cells(SHEET_NAME, "A1")
+                try:
+                    int(chr(i))
+                    continue
+                except ValueError:
+                    pass # Not a number
+                
+                self.assertEqual(chr(i), cell)
 
 if __name__ == '__main__':
     unittest.main()

@@ -63,7 +63,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         
         self.request.send(json_msg)
         
-        logging.debug("Sent: " + json.dumps(msg))
+        logging.info("Sent: " + json.dumps(msg))
 
 
     def __receive(self):
@@ -88,7 +88,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         recv_json = string_type(recv, encoding="utf-8")
         recv_string = json.loads(recv_json)
         
-        logging.debug("Received: " + string_type(recv_string))
+        logging.info("Received: " + string_type(recv_string))
         return recv_string
 
 
