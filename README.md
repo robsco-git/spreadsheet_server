@@ -156,4 +156,8 @@ lock files it needs. You can use a directory per project if you like.
 
 You can run the all the current tests with 'python -m unittest discover'.
 Use './coverage.sh' to run the coverage analysis of the current tests and have a look
-in the generated htmlcov directory.
+in the generated htmlcov directory. You will need the 'coverage' installed to the 
+virtualenv:
+```
+pip install coverage
+```
