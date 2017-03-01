@@ -3,12 +3,16 @@ from .context import MonitorThread, SpreadsheetServer, SpreadsheetClient
 from time import sleep
 import os, shutil
 
+this_dir = os.path.dirname(os.path.realpath(__file__))
+parent_dir = os.path.dirname(this_dir)
+
+SPREADSHEETS_PATH = os.path.join(parent_dir, "spreadsheets")
+TESTS_PATH = this_dir
+SAVED_SPREADSHEETS_PATH = os.path.join(parent_dir, "saved_spreadsheets")
+
 EXAMPLE_SPREADSHEET = "example.ods"
 EXAMPLE_SPREADSHEET_MOVED = "example_moved.ods"
 SOFFICE_PIPE = "soffice_headless"
-SPREADSHEETS_PATH = "./spreadsheets"
-TESTS_PATH = "./tests"
-SAVED_SPREADSHEETS_PATH = "./saved_spreadsheets"
 SHEET_NAME = "Sheet1"
 
 class TestMonitor(unittest.TestCase):
@@ -36,10 +40,6 @@ class TestMonitor(unittest.TestCase):
         os.remove(SPREADSHEETS_PATH + '/' + EXAMPLE_SPREADSHEET)
         
 
-
-
-
-    
     def setUp(self):
         self.spreadsheet_server._SpreadsheetServer__start_monitor_thread()
         self.monitor_thread = self.spreadsheet_server.monitor_thread

@@ -44,16 +44,18 @@ elif PY3:
 else:
     raise RuntimeError("Python version not supported.")
 
+this_dir = os.path.dirname(os.path.realpath(__file__))
+SAVE_PATH = os.path.join(this_dir, "saved_spreadsheets")
+SPREADSHEETS_PATH = os.path.join(this_dir, "spreadsheets")
+SOFFICE_LOG = os.path.join(this_dir, 'log', 'soffice.log')
+LOG_FILE = os.path.join(this_dir, 'log', 'server.log')
 
 SOFFICE_PROCNAME = "soffice.bin"
-SOFFICE_LOG = './log/soffice.log'
 HOST, PORT = "localhost", 5555
 SOFFICE_PIPE = "soffice_headless"
-SPREADSHEETS_PATH = "./spreadsheets"
 MONITOR_FREQ = 5 # In seconds
-SAVE_PATH = "./saved_spreadsheets/"
 LOG_LEVEL = logging.INFO
-LOG_FILE = './log/server.log'
+
 
 class SpreadsheetServer:
 

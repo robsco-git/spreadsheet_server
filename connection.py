@@ -19,6 +19,7 @@ from math import pow
 import traceback
 from werkzeug.utils import secure_filename
 from threading import ThreadError
+import os
 
 import sys
 PY2 = sys.version_info[0] == 2
@@ -391,7 +392,7 @@ class SpreadsheetConnection:
 
         if self.lock.locked():
             filename = secure_filename(filename)
-            self.spreadsheet.save(self.save_path + filename)
+            self.spreadsheet.save(os.path.join(self.save_path, filename))
             return True
         else:
             return False

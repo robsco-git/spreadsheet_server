@@ -124,7 +124,7 @@ class MonitorThread(threading.Thread):
 
     def __scan_directory(self, d):
         """Recursively scan a directory for spreadsheets."""
-
+        
         dir_contents = listdir(d)
 
         for f in dir_contents:
@@ -135,7 +135,6 @@ class MonitorThread(threading.Thread):
 
             full_path = join(d, f)
             if isfile(full_path):
-
                 # Remove self.spreadsheets_path from the path
                 relative_path = full_path.split(
                     self.spreadsheets_path)[1][1:]
