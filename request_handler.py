@@ -33,7 +33,9 @@ import logging
 from connection import SpreadsheetConnection
 from time import sleep
 import struct
+import select
 
+TIMEOUT = 10
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
@@ -97,10 +99,20 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         
         data = b''
         while len(data) < length:
-            packet = self.request.recv(length - len(data))
-            if not packet:
-                return data
-            data += packet
+            
+            ready = select.select([self.request], [], [], TIMEOUT)
+
+            if ready[0]:
+            
+                packet = self.request.recv(length - len(data))
+                if not packet:
+                    return b''
+                data += packet
+            
+            else:
+                logging.warning("Waited too long to recieve from the client.")
+                return b''
+
         return data
 
     

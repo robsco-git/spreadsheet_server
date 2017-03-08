@@ -19,11 +19,14 @@ import json
 import traceback
 import sys
 import struct
+import select
 
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
 
 IP, PORT = "localhost", 5555
+
+TIMEOUT = 10
 
 
 class SpreadsheetClient:
@@ -169,10 +172,20 @@ class SpreadsheetClient:
         
         data = b''
         while len(data) < length:
-            packet = self.sock.recv(length - len(data))
-            if not packet:
-                return data
-            data += packet
+
+            ready = select.select([self.sock], [], [], TIMEOUT)
+
+            if ready[0]:
+
+                packet = self.sock.recv(length - len(data))
+                if not packet:
+                    return b''
+                data += packet
+            
+            else:
+                # Did not recieve on the socket within the timeout
+                return b''
+
         return data
         
     
