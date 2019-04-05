@@ -10,3 +10,4 @@ log/*.log
 saved_spreadsheets/*
 .coverage
 htmlcov
+.vscode

@@ -15,18 +15,21 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import sys
+
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
 
 if PY2:
     import SocketServer as socketserver
-    string_type = unicode
+
+    string_type = unicode  # noqa
 elif PY3:
     import socketserver
+
     string_type = str
 else:
     raise RuntimeError("Python version not supported.")
-    
+
 import json
 from socket import SHUT_RDWR
 import logging
@@ -37,15 +40,14 @@ import select
 
 TIMEOUT = 10
 
-class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
+class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def __init__(self, save_path, *args, **kwargs):
         self.save_path = save_path
         socketserver.TCPServer.__init__(self, *args, **kwargs)
 
 
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
-    
     def __send(self, msg):
         """Convert a message to JSON and send it to the client.
 
@@ -53,25 +55,24 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         """
 
         # What type is msg coming in as?
-        
+
         if PY2:
-            json_msg = json.dumps(msg, encoding='utf-8')
+            json_msg = json.dumps(msg, encoding="utf-8")
         else:
             json_msg = json.dumps(msg)
             json_msg = bytes(json_msg, "utf-8")
 
         # Prepend the length of the string to the meg
-        json_msg = struct.pack('>I', len(json_msg)) + json_msg
-        
-        self.request.send(json_msg)
-        
-        logging.info("Sent: " + json.dumps(msg))
+        json_msg = struct.pack(">I", len(json_msg)) + json_msg
 
+        self.request.send(json_msg)
+
+        logging.info("Sent: " + json.dumps(msg))
 
     def __receive(self):
         """Receive a message from the client, decode it from JSON and return.
-        
-        The received messages are utf-8 encoded bytes. False is returned on 
+
+        The received messages are utf-8 encoded bytes. False is returned on
         failure to connect to the client, otherwise a string of the message is
         returned.
         """
@@ -79,43 +80,41 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         raw_msg_length = self.__receive_length(4)
         if not raw_msg_length:
             return False
-        msg_length = struct.unpack('>I', raw_msg_length)[0]
-        
+        msg_length = struct.unpack(">I", raw_msg_length)[0]
+
         recv = self.__receive_length(msg_length)
 
-        if recv == b'':
+        if recv == b"":
             # The connection is closed.
             return False
-            
+
         recv_json = string_type(recv, encoding="utf-8")
         recv_string = json.loads(recv_json)
-        
+
         logging.info("Received: " + string_type(recv_string))
         return recv_string
 
-
     def __receive_length(self, length):
         """Receive length number of bytes from the client."""
-        
-        data = b''
+
+        data = b""
         while len(data) < length:
-            
+
             ready = select.select([self.request], [], [], TIMEOUT)
 
             if ready[0]:
-            
+
                 packet = self.request.recv(length - len(data))
                 if not packet:
-                    return b''
+                    return b""
                 data += packet
-            
+
             else:
                 logging.warning("Waited too long to recieve from the client.")
-                return b''
+                return b""
 
         return data
 
-    
     def __make_connection(self):
         """Handle first request to server and check that it adheres to the
         protocol.
@@ -129,7 +128,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             self.__send("PROTOCOL ERROR")
             self.__close_connection()
             return False
-        
+
         data = self.__receive()
 
         if type(data) != list:
@@ -137,18 +136,18 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
         if len(data) != 2:
             return protocol_error()
-        
-        if (data[0] != "SPREADSHEET"):
+
+        if data[0] != "SPREADSHEET":
             return protocol_error()
-        
+
         # If there is a KeyError when looking up the spreadsheets name, wait
         # a bit and try again
 
         max_attempts = self.server.monitor_frequency + 1
         attempt = 0
-        
+
         while 1:
-            if attempt >= max_attempts: # soffice process isin't coming up
+            if attempt >= max_attempts:  # soffice process isin't coming up
                 logging.debug("Waited too long for spreadsheet")
                 # We can assume the spreadsheet does not exist
                 self.__send("NOT FOUND")
@@ -159,10 +158,10 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 self.con = SpreadsheetConnection(
                     self.server.spreadsheets[data[1]],
                     self.server.locks[data[1]],
-                    self.server.save_path
+                    self.server.save_path,
                 )
                 break
-                
+
             except KeyError:
                 pass
 
@@ -176,17 +175,16 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             self.con.lock_spreadsheet()
             return True
 
-
     def __close_connection(self):
         """Unlock the spreadsheet and close the connection to the client."""
-        
+
         try:
             if self.con.lock.locked:
                 self.con.unlock_spreadsheet()
         except (UnboundLocalError, AttributeError):
             # con was never created.
             pass
-            
+
         try:
             self.request.shutdown(SHUT_RDWR)
         except OSError:
@@ -196,7 +194,6 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         logging.debug("Closing socket for ThreadedTCPRequestHandler")
         self.request.close()
 
-
     def __main_loop(self):
         while True:
             data = self.__receive()
@@ -204,7 +201,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             if data == False:
                 # The connection has been lost.
                 break
-            
+
             elif data[0] == "SET":
                 try:
                     self.con.set_cells(data[1], data[2], data[3])
@@ -212,7 +209,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     self.__send({"ERROR": str(e)})
                 else:
                     self.__send("OK")
-                
+
             elif data[0] == "GET":
                 try:
                     cells = self.con.get_cells(data[1], data[2])
@@ -224,12 +221,11 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             elif data[0] == "GET_SHEETS":
                 sheet_names = self.con.get_sheet_names()
                 self.__send(sheet_names)
-                    
+
             elif data[0] == "SAVE":
                 self.con.save_spreadsheet(data[1])
                 self.__send("OK")
 
-    
     def handle(self):
         """Make a connection to the client, run the main protocol loop and
         close the connection.
@@ -238,4 +234,3 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         if self.__make_connection():
             self.__main_loop()
             self.__close_connection()
-

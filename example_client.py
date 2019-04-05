@@ -14,7 +14,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import shutil, os
+import shutil
+import os
 from client import SpreadsheetClient
 
 if __name__ == "__main__":
@@ -23,20 +24,22 @@ if __name__ == "__main__":
 
     EXAMPLE_SPREADSHEET = "example.ods"
 
-    # Copy the example spreadsheet from the tests directory into the spreadsheets 
+    # Copy the example spreadsheet from the tests directory into the spreadsheets
     # directory
 
     shutil.copyfile(
-        os.path.join("tests", EXAMPLE_SPREADSHEET), 
-        os.path.join("spreadsheets", EXAMPLE_SPREADSHEET)
+        os.path.join("tests", EXAMPLE_SPREADSHEET),
+        os.path.join("spreadsheets", EXAMPLE_SPREADSHEET),
     )
 
     SHEET_NAME = "Sheet1"
 
-    print("Waiting for the example spreadsheet to be scanned and loaded into LibreOffice.")
+    print(
+        "Waiting for the example spreadsheet to be scanned and loaded into LibreOffice."
+    )
 
     sc = SpreadsheetClient(EXAMPLE_SPREADSHEET)
-    
+
     # Get sheet names
     sheet_names = sc.get_sheet_names()
     print(sheet_names)
@@ -68,7 +71,7 @@ if __name__ == "__main__":
 
     # Save a spreadsheet - it will save into ./saved_spreadsheets
     sc.save_spreadsheet(EXAMPLE_SPREADSHEET)
-    
+
     sc.disconnect()
 
     os.remove(os.path.join("spreadsheets", EXAMPLE_SPREADSHEET))
