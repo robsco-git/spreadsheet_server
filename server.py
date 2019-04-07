@@ -57,7 +57,7 @@ SOFFICE_PROCNAME = "soffice.bin"
 HOST, PORT = "localhost", 5555
 SOFFICE_PIPE = "soffice_headless"
 MONITOR_FREQ = 5  # In seconds
-LOG_LEVEL = logging.INFO
+LOG_LEVEL = logging.DEBUG
 
 
 class SpreadsheetServer:
@@ -118,7 +118,7 @@ class SpreadsheetServer:
         logging.basicConfig(
             format="%(asctime)s:%(levelname)s:%(message)s",
             datefmt="%Y%m%d %H:%M:%S",
-            filename=self.log_file,
+            # filename=self.log_file,
             level=self.log_level,
         )
 
@@ -148,38 +148,6 @@ class SpreadsheetServer:
             process = psutil.Process(pid=pid)
             process.terminate()
             process.wait()
-
-        # Check for a already running LibreOffice process
-        pid = get_pid(SOFFICE_PROCNAME)
-        if pid != False:
-
-            if self.ask_kill:
-                ask_str = (
-                    "LibreOffice is already running. Would you like to kill "
-                    "it? (Y/n): "
-                )
-
-                while True:
-
-                    if PY2:
-                        answer = raw_input(ask_str)  # noqa
-                    else:
-                        answer = input(ask_str)
-                    answer = answer.lower()
-
-                    if answer not in ["y", "n", ""]:
-                        print("Please respond with 'y' or 'n'.")
-                    else:
-                        break
-
-                if answer in ["y", ""]:
-                    kill_process(pid)
-                else:
-                    print("Goodbye!")
-                    exit()
-
-            else:
-                kill_process(pid)
 
         soffice_path = get_soffice_binay_path()
 
