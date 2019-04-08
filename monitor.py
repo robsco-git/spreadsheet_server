@@ -15,11 +15,12 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import threading
-from os import listdir
+from os import listdir, remove
 from os.path import isfile, isdir, join, exists
 import logging
 from time import sleep
 import hashlib
+from glob import glob
 
 
 class MonitorThread(threading.Thread):
@@ -46,6 +47,8 @@ class MonitorThread(threading.Thread):
         self.monitor_frequency = monitor_frequency
         self.reload_on_disk_change = reload_on_disk_change
 
+        self.__delete_lock_files()
+
         self.done_scan = False  # Done an initial scan or not
 
         super(MonitorThread, self).__init__()
@@ -61,6 +64,17 @@ class MonitorThread(threading.Thread):
 
     def __get_full_path(self, doc):
         return join(self.spreadsheets_path, doc)
+
+    def __delete_lock_files(self):
+        """Lock files can cause issues opening documents."""
+        logging.info(self.spreadsheets_path)
+        lock_files = glob(
+            join(self.spreadsheets_path, ".~lock.*#"), recursive=True
+        )
+        for lock_file in lock_files:
+            remove(lock_file)
+
+        logging.info(lock_files)
 
     def __load_spreadsheet(self, doc):
         logging.info("Loading " + doc["path"])
