@@ -160,7 +160,7 @@ class SpreadsheetConnection:
 
         try:
             return float(value)
-        except ValueError:
+        except (ValueError, TypeError):
             return value
 
     def __check_list(self, data):

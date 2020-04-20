@@ -11,3 +11,4 @@ saved_spreadsheets/*
 .coverage
 htmlcov
 .vscode
+/todo.org
