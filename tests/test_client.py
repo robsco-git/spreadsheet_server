@@ -6,9 +6,6 @@ import shutil
 import sys
 import logging
 
-PY2 = sys.version_info[0] == 2
-PY3 = sys.version_info[0] == 3
-
 EXAMPLE_SPREADSHEET = "example.ods"
 SOFFICE_PIPE = "soffice_headless"
 SPREADSHEETS_PATH = "./spreadsheets"
@@ -185,17 +182,16 @@ class TestClient(unittest.TestCase):
         os.remove(saved_path)
 
     def test_unicode(self):
-        if PY3:
-            for i in range(1000):
-                self.sc.set_cells(SHEET_NAME, "A1", chr(i))
-                cell = self.sc.get_cells(SHEET_NAME, "A1")
-                try:
-                    int(chr(i))
-                    continue
-                except ValueError:
-                    pass  # Not a number
+        for i in range(1000):
+            self.sc.set_cells(SHEET_NAME, "A1", chr(i))
+            cell = self.sc.get_cells(SHEET_NAME, "A1")
+            try:
+                int(chr(i))
+                continue
+            except ValueError:
+                pass  # Not a number
 
-                self.assertEqual(chr(i), cell)
+            self.assertEqual(chr(i), cell)
 
 
 if __name__ == "__main__":

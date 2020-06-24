@@ -19,12 +19,6 @@ import os
 import sys
 import tempfile
 
-if platform.system() == "FreeBSD":
-    sys.path.append("/usr/local/lib/libreoffice/program")
-    os.environ[
-        "URE_BOOTSTRAP"
-    ] = "file:///usr/local/lib/libreoffice/program/fundamentalrc"
-
 import logging
 import pyoo
 import subprocess
@@ -36,16 +30,6 @@ from signal import SIGTERM
 import fileinput
 import psutil
 import socket
-
-PY2 = sys.version_info[0] == 2
-PY3 = sys.version_info[0] == 3
-if PY2:
-
-    string_type = unicode  # noqa
-elif PY3:
-    string_type = str
-else:
-    raise RuntimeError("Python version not supported.")
 
 this_dir = os.path.dirname(os.path.realpath(__file__))
 SAVE_PATH = os.path.join(this_dir, "saved_spreadsheets")
@@ -134,7 +118,7 @@ class SpreadsheetServer:
 
         def get_soffice_binay_path():
             try:
-                return string_type(
+                return str(
                     subprocess.check_output(["which", "soffice"])[:-1],
                     encoding="utf-8",
                 )

@@ -17,12 +17,8 @@
 import socket
 import json
 import traceback
-import sys
 import struct
 import select
-
-PY2 = sys.version_info[0] == 2
-PY3 = sys.version_info[0] == 3
 
 IP, PORT = "localhost", 5555
 
@@ -31,9 +27,6 @@ TIMEOUT = 10
 
 class SpreadsheetClient:
     def __init__(self, spreadsheet, ip=IP, port=PORT):
-        if not PY2 and not PY3:
-            raise RuntimeError("Python version not supported.")
-
         try:
             self.sock = self.__connect(ip, port)
         except socket.error:
@@ -119,11 +112,8 @@ class SpreadsheetClient:
     def __send(self, msg):
         """Encode msg into json and then send it over the socket."""
 
-        if PY2:
-            json_msg = json.dumps(msg, encoding="utf-8")
-        else:
-            json_msg = json.dumps(msg)
-            json_msg = bytes(json_msg, "utf-8")
+        json_msg = json.dumps(msg)
+        json_msg = bytes(json_msg, "utf-8")
 
         # Prepend the length of the string to the meg
         json_msg = struct.pack(">I", len(json_msg)) + json_msg
@@ -149,11 +139,8 @@ class SpreadsheetClient:
             # The connection has been closed.
             raise Exception("Connection to server closed!")
 
-        if PY2:
-            received = json.loads(recv, encoding="utf-8")
-        else:
-            received = str(recv, encoding="utf-8")
-            received = json.loads(received)
+        received = str(recv, encoding="utf-8")
+        received = json.loads(received)
 
         return received
 

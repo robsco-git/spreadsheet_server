@@ -6,8 +6,8 @@ spreadsheet_server was built to aid rapid web tool development where the logic
 was already implemented in Microsoft Excel/LibreOffice Calc. Instead of
 rewriting the logic from scratch, this tool was born.
 
-The tool has been developed to work on a headless GNU/Linux or FreeBSD system
-where the server and client are on the same machine.
+The tool has been developed to work on a headless GNU/Linux where the server
+and client are on the same machine.
 
 ## Features
 
@@ -54,7 +54,7 @@ exposed by the client. This is a good place to start.
 
 - LibreOffice Calc
 - Python3 or Python2
-  - On Ubuntu Server, Python3 is recommended. On FreeBSD, Python2 is recommended. See the installation instructions below.
+  - On Ubuntu Server, Python3 is recommended. See the installation instructions below.
 - Python packages:
   - pyoo (for the connection to LibreOffice)
   - psutil (for cross platform pid discovery for the soffice process)
@@ -93,42 +93,6 @@ https://gist.github.com/hbrunn/6f4a007a6ff7f75c0f8b
 
 Also, here is some more discussion on the topic:
 http://askubuntu.com/a/418550
-
-### FreeBSD 11.0
-
-#### Using LibreOffice installed from pkg
-
-At the time of writing, the Python-UNO module, is built using python2 when you
-install the binary version of LibreOffice provided by pkg. If you decide to use the
-pkg version of LibreOffice, you will need to run the spreadsheet_server server
-component with python2:
-
-```
-freebsd-update fetch install
-sudo pkg install git libreoffice py27-virtualenv
-git clone https://github.com/robsco-git/spreadsheet_server.git
-cd spreadsheet_server
-virtualenv venv
-. venv/bin/activate
-pip install -r requirements.txt
-python server.py
-```
-
-#### Using LibreOffice installed from the ports tree, compiling the LibreOffice python modules with python3.5
-
-```
-freebsd-update fetch install
-pkg install git py27-virtualenv
-cd /usr/ports/editors/libreoffice
-setenv PYTHON_VERSION python3.5
-make clean install
-git clone https://github.com/robsco-git/spreadsheet_server.git
-cd spreadsheet_server
-virtualenv venv
-. venv/bin/activate
-pip install -r requirements.txt
-python server.py
-```
 
 ## Questions
 

@@ -21,17 +21,6 @@ from werkzeug.utils import secure_filename
 from threading import ThreadError
 import os
 
-import sys
-
-PY2 = sys.version_info[0] == 2
-PY3 = sys.version_info[0] == 3
-if PY2:
-    string_type = unicode  # noqa
-elif PY3:
-    string_type = str
-else:
-    raise RuntimeError("Python version not supported.")
-
 
 CELL_REF_ERROR_STR = "Cell range is invalid."
 
@@ -270,7 +259,7 @@ class SpreadsheetConnection:
         """ A cell ref must be of the LibreOffice format
         e.g. A1 or A1:ABC123."""
 
-        if type(cell_ref) is not string_type:
+        if type(cell_ref) is not str:
             raise ValueError(CELL_REF_ERROR_STR)
 
         if not cell_ref[0].isalpha():
@@ -309,7 +298,7 @@ class SpreadsheetConnection:
             if sheet < 0 or sheet > len(sheet_names) - 1:
                 raise ValueError(ERROR_STR)
 
-        elif type(sheet) is string_type:
+        elif type(sheet) is str:
             if sheet not in sheet_names:
                 raise ValueError(ERROR_STR)
 

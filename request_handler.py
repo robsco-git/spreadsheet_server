@@ -14,21 +14,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import sys
-
-PY2 = sys.version_info[0] == 2
-PY3 = sys.version_info[0] == 3
-
-if PY2:
-    import SocketServer as socketserver
-
-    string_type = unicode  # noqa
-elif PY3:
-    import socketserver
-
-    string_type = str
-else:
-    raise RuntimeError("Python version not supported.")
+import socketserver
 
 import json
 from socket import SHUT_RDWR
@@ -55,12 +41,8 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         """
 
         # What type is msg coming in as?
-
-        if PY2:
-            json_msg = json.dumps(msg, encoding="utf-8")
-        else:
-            json_msg = json.dumps(msg)
-            json_msg = bytes(json_msg, "utf-8")
+        json_msg = json.dumps(msg)
+        json_msg = bytes(json_msg, "utf-8")
 
         # Prepend the length of the string to the meg
         json_msg = struct.pack(">I", len(json_msg)) + json_msg
@@ -88,10 +70,10 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             # The connection is closed.
             return False
 
-        recv_json = string_type(recv, encoding="utf-8")
+        recv_json = str(recv, encoding="utf-8")
         recv_string = json.loads(recv_json)
 
-        logging.info("Received: " + string_type(recv_string))
+        logging.info("Received: " + str(recv_string))
         return recv_string
 
     def __receive_length(self, length):
