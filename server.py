@@ -73,7 +73,7 @@ class SpreadsheetServer:
         # spreadsheets is polled.
         self.monitor_frequency = monitor_frequency
 
-        # Weather or not to close and open a spreadsheet with the file changes on
+        # Whether or not to close and open a spreadsheet with the file changes on
         # disk
         self.reload_on_disk_change = reload_on_disk_change
 

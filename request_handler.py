@@ -14,15 +14,16 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import socketserver
-
 import json
-from socket import SHUT_RDWR
 import logging
-from connection import SpreadsheetConnection
-from time import sleep
-import struct
 import select
+import socketserver
+import struct
+from socket import SHUT_RDWR
+from time import sleep
+
+from com.sun.star.uno import RuntimeException
+from connection import SpreadsheetConnection
 
 TIMEOUT = 10
 
@@ -187,7 +188,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             elif data[0] == "SET":
                 try:
                     self.con.set_cells(data[1], data[2], data[3])
-                except ValueError as e:
+                except (ValueError, RuntimeException) as e:
                     self.__send({"ERROR": str(e)})
                 else:
                     self.__send("OK")
@@ -195,7 +196,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             elif data[0] == "GET":
                 try:
                     cells = self.con.get_cells(data[1], data[2])
-                except ValueError as e:
+                except (ValueError, RuntimeException) as e:
                     self.__send({"ERROR": str(e)})
                 else:
                     self.__send(cells)

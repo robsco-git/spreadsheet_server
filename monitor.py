@@ -67,14 +67,12 @@ class MonitorThread(threading.Thread):
 
     def __delete_lock_files(self):
         """Lock files can cause issues opening documents."""
-        logging.info(self.spreadsheets_path)
+
         lock_files = glob(
             join(self.spreadsheets_path, ".~lock.*#"), recursive=True
         )
         for lock_file in lock_files:
             remove(lock_file)
-
-        logging.info(lock_files)
 
     def __load_spreadsheet(self, doc):
         logging.info("Loading " + doc["path"])
