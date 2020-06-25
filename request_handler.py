@@ -23,6 +23,7 @@ from socket import SHUT_RDWR
 from time import sleep
 
 from com.sun.star.uno import RuntimeException
+from com.sun.star.io import IOException
 from connection import SpreadsheetConnection
 
 TIMEOUT = 10
@@ -206,8 +207,12 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 self.__send(sheet_names)
 
             elif data[0] == "SAVE":
-                self.con.save_spreadsheet(data[1])
-                self.__send("OK")
+                try:
+                    self.con.save_spreadsheet(data[1])
+                except (IOException, OSError) as e:
+                    self.__send({"ERROR": str(e)})
+                else:
+                    self.__send("OK")
 
     def handle(self):
         """Make a connection to the client, run the main protocol loop and
