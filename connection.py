@@ -252,7 +252,6 @@ class SpreadsheetConnection:
     def get_sheet_names(self):
         """Returns a list of all sheet names in the workbook."""
 
-        # With python2 s.name is of the 'unicode' type
         return [s.name for s in self.spreadsheet.sheets]
 
     def __validate_cell_ref(self, cell_ref):
