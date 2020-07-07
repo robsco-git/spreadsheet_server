@@ -19,6 +19,23 @@ and client are on the same machine.
   opened in LibreOffice.
 - Spreadsheets can be saved - useful for debugging purposes.
 
+## Installation
+
+### Ubuntu Server 20.04
+
+```
+sudo apt-get update && sudo apt-get upgrade
+sudo apt-get install git gcc python3 python3-dev python3-virtualenv libreoffice-calc python3-uno
+git clone https://github.com/robsco-git/spreadsheet_server.git
+cd spreadsheet_server
+mkdir -p ~/.virtualenvs
+virtualenv --system-site-packages -p python3 ~/.virtualenvs/spreadsheet_server
+source ~/.virtualenvs/spreadsheet_server/bin/activate
+pip install -r requirements.txt
+python server.py
+# Copy spreadsheets (.xlsx, .ods etc) into ./spreadsheets
+```
+
 ## Usage
 
 Place your spreadsheets in './spreadsheets'.
@@ -47,52 +64,6 @@ exposed by the client. This is a good place to start.
   spreadsheets are closed in LibreOffice.
 - The 'client.py' connects to the server and can update cells and retrieve
   their calculated content.
-
-## Requirements
-
-### Server
-
-- LibreOffice Calc
-- Python3 or Python2
-  - On Ubuntu Server, Python3 is recommended. See the installation instructions below.
-- Python packages:
-  - pyoo (for the connection to LibreOffice)
-  - psutil (for cross platform pid discovery for the soffice process)
-  - werkzeug (for securing filenames when saving spreadsheets)
-
-### Client
-
-- Python2 or Python3
-
-## Installation
-
-### Ubuntu Server 16.04
-
-```
-sudo apt-get update && sudo apt-get upgrade
-sudo apt-get install git gcc python3 python3-dev python-virtualenv libreoffice-calc python3-uno
-git clone https://github.com/robsco-git/spreadsheet_server.git
-cd spreadsheet_server
-virtualenv --system-site-packages -p python3 venv
-. venv/bin/activate
-pip install -r requirements.txt
-python server.py
-```
-
-#### Running the server component with python2 on Ubuntu Server
-
-First off, keep in mind that a python2 spreadsheet_server client can connect to a
-python3 spreadsheet_server server.
-
-The Ubuntu team has removed the 'python-uno' package in favour of the 'python3-uno'
-package. Running the spreadsheet_server server component with python2 requires
-the LibreOffice 'uno' module built for python2. If you really need to run the server
-as python2 on Ubuntu Server, You will need to build LibreOffice with python2
-support. Here is a script outlining how to do so for an older version of LibreOffice:
-https://gist.github.com/hbrunn/6f4a007a6ff7f75c0f8b
-
-Also, here is some more discussion on the topic:
-http://askubuntu.com/a/418550
 
 ## Questions
 
