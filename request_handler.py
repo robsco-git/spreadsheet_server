@@ -106,7 +106,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
         def protocol_error():
             # Invalid connection protocol
-            self.logging.error(
+            logging.error(
                 "Client attempted to connect using and invalid protocol."
             )
             self.__send("PROTOCOL ERROR")
