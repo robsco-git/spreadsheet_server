@@ -14,22 +14,19 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import platform
+import logging
 import os
+import socket
+import subprocess
 import sys
 import tempfile
-
-import logging
-import pyoo
-import subprocess
 import threading
 from time import sleep
-from request_handler import ThreadedTCPRequestHandler, ThreadedTCPServer
+
+import pyoo
 from monitor import MonitorThread
-from signal import SIGTERM
-import fileinput
-import psutil
-import socket
+from request_handler import ThreadedTCPRequestHandler, ThreadedTCPServer
+
 
 this_dir = os.path.dirname(os.path.realpath(__file__))
 SAVE_PATH = os.path.join(this_dir, "saved_spreadsheets")
@@ -59,7 +56,6 @@ class SpreadsheetServer:
         log_level=LOG_LEVEL,
         log_file=LOG_FILE,
     ):
-
         # Where the output from LibreOffice is logged to
         self.soffice_log = soffice_log
 
@@ -107,15 +103,6 @@ class SpreadsheetServer:
         )
 
     def __start_soffice(self):
-        def get_pid(name):
-            for proc in psutil.process_iter():
-                try:
-                    if proc.name() == SOFFICE_PROCNAME:
-                        return proc.pid
-                except psutil.ZombieProcess:
-                    pass
-            return False
-
         def get_soffice_binay_path():
             try:
                 return str(
@@ -126,12 +113,6 @@ class SpreadsheetServer:
                 raise RuntimeError(
                     "The soffice binary was not found. Is LibreOffice installed?"
                 )
-
-        def kill_process(pid):
-            logging.warning("Killing existing LibreOffice process")
-            process = psutil.Process(pid=pid)
-            process.terminate()
-            process.wait()
 
         soffice_path = get_soffice_binay_path()
 

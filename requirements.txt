@@ -1,3 +1,2 @@
-psutil==5.7.0
 pyoo==1.4
-Werkzeug==1.0.1
+Werkzeug==3.1.3

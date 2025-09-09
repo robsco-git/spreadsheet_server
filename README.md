@@ -21,6 +21,13 @@ and client are on the same machine.
 
 ## Installation
 
+### Docker
+
+```
+docker build . --tag="spreadsheet_server"
+docker run -v ./spreadsheets:/spreadsheet_server/spreadsheets -p 127.0.0.1:5555:5555 --name spreadsheet_server spreadsheet_server
+```
+
 ### Ubuntu Server 20.04
 
 ```
